@@ -1,0 +1,73 @@
+#!/bin/sh
+
+#Set default lang
+uci set luci.main.lang='en'
+uci commit luci
+
+#Timezone UTC+8
+uci set system.@system[0].timezone=CST-8
+uci set system.@system[0].zonename=Asia/Shanghai
+uci commit system
+#Timezone UTC+10/+11
+#uci set system.@system[0].timezone=UTC
+#uci set system.@system[0].zonename=Australia/Melbourne
+#uci commit system
+
+#Feed
+sed -i '/openwrt_packages/ { s/snapshots\/packages/releases\/packages-19.07/g; }' /etc/opkg/distfeeds.conf
+sed -i '/openwrt_routing/ { s/snapshots\/packages/releases\/packages-19.07/g; }' /etc/opkg/distfeeds.conf
+sed -i '/openwrt_telephony/ { s/snapshots\/packages/releases\/packages-19.07/g; }' /etc/opkg/distfeeds.conf
+sed -i '/natelol/d' /etc/opkg/distfeeds.conf
+#sed -i 's,downloads.openwrt.org,mirrors.cloud.tencent.com/lede,g' /etc/opkg/distfeeds.conf
+
+#uhttpd
+uci set uhttpd.main.rfc1918_filter=0
+uci set uhttpd.main.redirect_https=0
+uci commit uhttpd
+/etc/init.d/uhttpd restart
+
+#Remove IPv6
+uci delete network.lan.ip6assign
+uci delete network.wan6
+uci delete dhcp.lan.ra
+uci delete dhcp.lan.dhcpv6
+uci delete dhcp.lan.ndp
+uci commit dhcp
+
+#Packet Steering and Set Lan MTU
+uci set network.globals.packet_steering=1
+uci set network.lan.mtu='1492'
+uci commit network
+/etc/init.d/network restart
+
+#Firewall
+uci set firewall.@defaults[0].fullcone='1'
+uci commit firewall
+
+#SSL
+sed -i 's,#devcrypto,devcrypto,g' /etc/ssl/openssl.cnf
+sed -i 's,#USE_SOFTDRIVERS = 2,USE_SOFTDRIVERS = 1,g' /etc/ssl/openssl.cnf
+
+#dnsmasq
+sed -i '/log-facility/d' /etc/dnsmasq.conf
+echo "log-facility=/dev/null" >> /etc/dnsmasq.conf
+
+#SSRP
+#sed -i 's/local ucic = uci.cursor()/local ucic = luci.model.uci.cursor()/g' /usr/share/shadowsocksr/subscribe.lua
+#sed -i "s/'cbid.shadowsocksr.'/'widget.cbid.shadowsocksr.'/g" /usr/lib/lua/luci/view/shadowsocksr/ssrurl.htm
+uci set shadowsocksr.@global[0].gfwlist_url='https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/gfw.txt'
+uci set shadowsocksr.@global[0].chnroute_url='https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute.txt'
+uci commit shadowsocksr
+
+#Others
+ln -sf /sbin/ip /usr/bin/ip
+opkg flag hold luci-app-firewall
+opkg flag hold firewall
+opkg flag hold dnsmasq-full
+#sync; echo 3 > /proc/sys/vm/drop_caches
+
+#Flush LuCI cache
+rm -rf /tmp/luci-modulecache
+rm -f /tmp/luci-indexcache
+
+exit 0
