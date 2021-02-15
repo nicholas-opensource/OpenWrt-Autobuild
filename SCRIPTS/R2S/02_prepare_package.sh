@@ -155,6 +155,9 @@ svn co https://github.com/openwrt/packages/trunk/devel/gcc feeds/packages/devel/
 # Change Golang
 rm -rf ./feeds/packages/lang/golang
 svn co https://github.com/openwrt/packages/trunk/lang/golang feeds/packages/lang/golang
+# Change Ruby
+rm -rf ./feeds/packages/lang/ruby
+svn co https://github.com/openwrt/packages/trunk/lang/ruby feeds/packages/lang/ruby
 
 ## Extra Packages
 # Python
