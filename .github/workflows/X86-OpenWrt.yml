@@ -8,7 +8,6 @@ on:
       - '.github/workflows/X86-OpenWrt.yml'
       - 'SEED/X86/config.seed'
       - 'SCRIPTS/switch'
-      - 'SCRIPTS/X86/02_prepare_package.sh'
  # watch:
  #   types: [started]
 
@@ -59,6 +58,7 @@ jobs:
         cd openwrt
         cp -r ../SCRIPTS/. ./
         /bin/bash 02_prepare_package.sh
+        /bin/bash 02_X86.sh
     - name: Convert Translation
       run: |
         cd openwrt

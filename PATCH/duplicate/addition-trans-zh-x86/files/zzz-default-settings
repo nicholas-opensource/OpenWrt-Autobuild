@@ -13,13 +13,6 @@ uci commit system
 #uci set system.@system[0].zonename=Australia/Melbourne
 #uci commit system
 
-#Feed
-sed -i '/openwrt_luci/ { s/snapshots\/packages/releases\/packages-19.07/g; }' /etc/opkg/distfeeds.conf
-sed -i '/openwrt_packages/ { s/snapshots\/packages/releases\/packages-19.07/g; }' /etc/opkg/distfeeds.conf
-sed -i '/openwrt_routing/ { s/snapshots\/packages/releases\/packages-19.07/g; }' /etc/opkg/distfeeds.conf
-sed -i '/openwrt_telephony/ { s/snapshots\/packages/releases\/packages-19.07/g; }' /etc/opkg/distfeeds.conf
-sed -i '/natelol/d' /etc/opkg/distfeeds.conf
-
 #uhttpd
 uci set uhttpd.main.rfc1918_filter=0
 uci set uhttpd.main.redirect_https=0

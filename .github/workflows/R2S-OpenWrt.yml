@@ -8,7 +8,6 @@ on:
       - '.github/workflows/R2S-OpenWrt.yml'
       - 'SEED/R2S/config.seed'
       - 'SCRIPTS/switch'
-      - 'SCRIPTS/R2S/02_prepare_package.sh'
  # watch:
  #   types: [started]
 
@@ -70,6 +69,7 @@ jobs:
         cd openwrt
         cp -r ../SCRIPTS/. ./
         /bin/bash 02_prepare_package.sh
+        /bin/bash 02_R2S.sh
     - name: Convert Translation
       run: |
         cd openwrt
