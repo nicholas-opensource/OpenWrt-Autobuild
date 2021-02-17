@@ -13,6 +13,9 @@ uci commit system
 #uci set system.@system[0].zonename=Australia/Melbourne
 #uci commit system
 
+#Feed
+sed -i 's,releases/21.02,snapshots,g' /etc/opkg/distfeeds.conf
+
 #uhttpd
 uci set uhttpd.main.rfc1918_filter=0
 uci set uhttpd.main.redirect_https=0

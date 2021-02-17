@@ -95,13 +95,13 @@ jobs:
         df -h
         cd openwrt
         let make_process=$(nproc)+1
-        make toolchain/install -j${make_process} V=s
+        make toolchain/install -j${make_process} V=m
     - name: Compile Openwrt
       run: |
         df -h
         cd openwrt
         let make_process=$(nproc)+1
-        make -j${make_process} V=s || make -j${make_process} V=s || make -j1 V=s
+        make -j${make_process} V=m || make -j${make_process} V=m || make -j1 V=s
     - name: Cleaning
       run: |
         df -h
