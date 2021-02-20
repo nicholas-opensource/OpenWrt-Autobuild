@@ -15,8 +15,6 @@ sed -i 's,-SNAPSHOT,,g' include/version.mk
 sed -i 's,-SNAPSHOT,,g' package/base-files/image-config.in
 
 ## Important Patches
-# Fix libncursesw6
-wget -qO - https://patch-diff.githubusercontent.com/raw/openwrt/openwrt/pull/3875.patch | patch -p1
 # ARM64: Add CPU model name in proc cpuinfo
 wget -P target/linux/generic/pending-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.4/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # LuCI network
@@ -27,8 +25,6 @@ patch -p1 < ../PATCH/new/package/use_json_object_new_int64.patch
 patch -p1 < ../PATCH/new/package/dnsmasq-add-filter-aaaa-option.patch
 patch -p1 < ../PATCH/new/package/luci-add-filter-aaaa-option.patch
 cp -f ../PATCH/new/package/900-add-filter-aaaa-option.patch ./package/network/services/dnsmasq/patches/900-add-filter-aaaa-option.patch
-rm -rf ./package/base-files/files/etc/init.d/boot
-wget -P package/base-files/files/etc/init.d https://github.com/immortalwrt/immortalwrt/raw/openwrt-18.06-k5.4/package/base-files/files/etc/init.d/boot
 # Patch kernel to fix fullcone conflict
 pushd target/linux/generic/hack-5.4
 wget https://github.com/coolsnowwolf/lede/raw/master/target/linux/generic/hack-5.4/952-net-conntrack-events-support-multiple-registrant.patch
@@ -95,9 +91,9 @@ svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/
 #svn co https://github.com/Mattraks/helloworld/branches/Preview/luci-app-ssr-plus package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # Merge Pull Requests from Mattraks
-pushd package/lean
-wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/388.patch | patch -p1
-popd
+#pushd package/lean
+#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/388.patch | patch -p1
+#popd
 # Add Extra Proxy Ports and Change Lists
 pushd package/lean/luci-app-ssr-plus/root/etc/init.d
 sed -i 's/143/143,25,5222/' shadowsocksr
