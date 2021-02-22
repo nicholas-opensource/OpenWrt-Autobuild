@@ -66,7 +66,7 @@ svn co https://github.com/nxhack/openwrt-node-packages/trunk/node-serialport-bin
 
 ## Extra Packages
 # Arpbind
-svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-arpbind package/lean/luci-app-arpbind
+#svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-arpbind package/lean/luci-app-arpbind
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-arpbind package/lean/luci-app-arpbind
 # AutoCore
 svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/autocore package/lean/autocore
