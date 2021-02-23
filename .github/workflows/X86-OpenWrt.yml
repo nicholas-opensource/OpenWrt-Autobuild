@@ -113,7 +113,6 @@ jobs:
     - name: Cleaning
       run: |
         cd openwrt/bin/targets/x86/64
-        /bin/bash ../../../../../SCRIPTS/06_X86.sh
         /bin/bash ../../../../../SCRIPTS/06_cleaning.sh
     - name: Print Disk Space After
       run: df -h
