@@ -47,23 +47,6 @@ svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/shortcut-fe packa
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/fast-classifier package/lean/fast-classifier
 cp -f ../PATCH/duplicate/shortcut-fe ./package/base-files/files/etc/init.d
 
-## Change Packages
-# Change Node
-rm -rf ./feeds/packages/lang/node
-svn co https://github.com/nxhack/openwrt-node-packages/trunk/node feeds/packages/lang/node
-rm -rf ./feeds/packages/lang/node-arduino-firmata
-svn co https://github.com/nxhack/openwrt-node-packages/trunk/node-arduino-firmata feeds/packages/lang/node-arduino-firmata
-rm -rf ./feeds/packages/lang/node-cylon
-svn co https://github.com/nxhack/openwrt-node-packages/trunk/node-cylon feeds/packages/lang/node-cylon
-rm -rf ./feeds/packages/lang/node-hid
-svn co https://github.com/nxhack/openwrt-node-packages/trunk/node-hid feeds/packages/lang/node-hid
-rm -rf ./feeds/packages/lang/node-homebridge
-svn co https://github.com/nxhack/openwrt-node-packages/trunk/node-homebridge feeds/packages/lang/node-homebridge
-rm -rf ./feeds/packages/lang/node-serialport
-svn co https://github.com/nxhack/openwrt-node-packages/trunk/node-serialport feeds/packages/lang/node-serialport
-rm -rf ./feeds/packages/lang/node-serialport-bindings
-svn co https://github.com/nxhack/openwrt-node-packages/trunk/node-serialport-bindings feeds/packages/lang/node-serialport-bindings
-
 ## Extra Packages
 # Arpbind
 #svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-arpbind package/lean/luci-app-arpbind
@@ -92,9 +75,9 @@ svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/
 #svn co https://github.com/Mattraks/helloworld/branches/Preview/luci-app-ssr-plus package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # Merge Pull Requests from Mattraks
-pushd package/lean
-wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/394.patch | patch -p1
-popd
+#pushd package/lean
+#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/394.patch | patch -p1
+#popd
 # Add Extra Proxy Ports and Change Lists
 pushd package/lean/luci-app-ssr-plus/root/etc/init.d
 sed -i 's/143/143,25,5222/' shadowsocksr
@@ -111,7 +94,7 @@ svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/pdnsd-alt package
 svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-core
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/kcptun package/lean/kcptun
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/v2ray-plugin package/lean/v2ray-plugin
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/xray-plugin package/lean/xray-plugin
+svn co https://github.com/fw876/helloworld/trunk/xray-plugin package/lean/xray-plugin
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/srelay package/lean/srelay
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/microsocks package/lean/microsocks
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/dns2socks package/lean/dns2socks
