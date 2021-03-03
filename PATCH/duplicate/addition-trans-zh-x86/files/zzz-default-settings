@@ -13,8 +13,7 @@ uci commit system
 #uci set system.@system[0].zonename=Australia/Melbourne
 #uci commit system
 
-#Feed
-sed -i 's,21.02,21.02-SNAPSHOT,g' /etc/opkg/distfeeds.conf
+#Feeds
 sed -i 's,downloads.openwrt.org,mirror.sjtu.edu.cn/openwrt,g' /etc/opkg/distfeeds.conf
 
 #uhttpd
