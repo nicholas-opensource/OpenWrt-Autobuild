@@ -14,7 +14,8 @@ uci commit system
 #uci commit system
 
 #Feed
-sed -i 's,releases/21.02,snapshots,g' /etc/opkg/distfeeds.conf
+sed -i 's,21.02,21.02-SNAPSHOT,g' /etc/opkg/distfeeds.conf
+sed -i 's,downloads.openwrt.org,mirror.sjtu.edu.cn/openwrt,g' /etc/opkg/distfeeds.conf
 
 #uhttpd
 uci set uhttpd.main.rfc1918_filter=0

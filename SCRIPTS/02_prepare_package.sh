@@ -36,16 +36,6 @@ wget -P package/network/config/firewall/patches/ https://github.com/immortalwrt/
 patch -p1 < ../PATCH/new/package/luci-app-firewall_add_fullcone.patch
 # FullCone modules
 cp -rf ../PATCH/duplicate/fullconenat ./package/network/fullconenat
-# SFE core patch
-pushd target/linux/generic/hack-5.4
-wget https://github.com/coolsnowwolf/lede/raw/master/target/linux/generic/hack-5.4/953-net-patch-linux-kernel-to-support-shortcut-fe.patch
-popd
-# Patch firewall to enable SFE
-patch -p1 < ../PATCH/new/package/luci-app-firewall_add_sfe_switch.patch
-# SFE modules
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/shortcut-fe package/lean/shortcut-fe
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/fast-classifier package/lean/fast-classifier
-cp -f ../PATCH/duplicate/shortcut-fe ./package/base-files/files/etc/init.d
 
 ## Extra Packages
 # Arpbind
