@@ -13,8 +13,8 @@ sed -i '/;;/i\ethtool -K eth0 rx off tx off && logger -t disable-offloading "dis
 # Patch i2c0
 cp -f ../PATCH/new/main/201-rockchip-rk3328-add-i2c0-controller-for-nanopi-r2s.patch ./target/linux/rockchip/patches-5.4/201-rockchip-rk3328-add-i2c0-controller-for-nanopi-r2s.patch
 # Overclock or not
-cp -f ../PATCH/new/main/999-rk3328-enable-1512mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1512mhz.patch
-#cp -f ../PATCH/new/main/999-rk3328-enable-1608mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1608mhz.patch
+cp -f ../PATCH/new/main/999-rk3328-enable-1512mhz-and-minimum-at-1008mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1512mhz-and-minimum-at-1008mhz.patch
+#cp -f ../PATCH/new/main/999-rk3328-enable-1608mhz-and-minimum-at-1008mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1608mhz-and-minimum-at-1008mhz.patch
 # Swap LAN & WAN
 #patch -p1 < ../PATCH/new/main/0001-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
 # Update r8152 driver
