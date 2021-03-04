@@ -4,8 +4,6 @@ clear
 ## Prepare
 # GCC CFLAGS
 sed -i 's/Os/O2/g' include/target.mk
-# Remove freifunk feed
-sed -i '/freifunk/d' ./feeds.conf.default
 # Update feeds
 ./scripts/feeds update -a && ./scripts/feeds install -a
 # Irqbalance

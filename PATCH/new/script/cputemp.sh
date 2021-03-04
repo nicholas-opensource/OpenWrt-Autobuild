@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo "Use Ctrl+C to quit"
+
 while true
 
 do
