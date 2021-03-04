@@ -11,10 +11,10 @@ sed -i '/set_interface_core 4 "eth1"/a\set_interface_core 1 "ff150000" "ff150000
 # Disabed rk3328 ethernet tcp/udp offloading tx/rx
 sed -i '/;;/i\ethtool -K eth0 rx off tx off && logger -t disable-offloading "disabed rk3328 ethernet tcp/udp offloading tx/rx"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
 # Patch i2c0
-cp -f ../PATCH/new/main/998-rockchip-enable-i2c0-on-NanoPi-R2S.patch ./target/linux/rockchip/patches-5.4/998-rockchip-enable-i2c0-on-NanoPi-R2S.patch
+cp -f ../PATCH/new/main/201-rockchip-rk3328-add-i2c0-controller-for-nanopi-r2s.patch ./target/linux/rockchip/patches-5.4/201-rockchip-rk3328-add-i2c0-controller-for-nanopi-r2s.patch
 # Overclock or not
-cp -f ../PATCH/new/main/999-RK3328-enable-1512mhz-opp.patch ./target/linux/rockchip/patches-5.4/999-RK3328-enable-1512mhz-opp.patch
-#cp -f ../PATCH/new/main/999-unlock-1608mhz-rk3328.patch ./target/linux/rockchip/patches-5.4/999-unlock-1608mhz-rk3328.patch
+cp -f ../PATCH/new/main/999-rk3328-enable-1512mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1512mhz.patch
+#cp -f ../PATCH/new/main/999-rk3328-enable-1608mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1608mhz.patch
 # Swap LAN & WAN
 #patch -p1 < ../PATCH/new/main/0001-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
 # Update r8152 driver
