@@ -40,8 +40,6 @@ cp -rf ../PATCH/duplicate/fullconenat ./package/network/fullconenat
 svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/autocore package/lean/autocore
 rm -rf ./feeds/packages/utils/coremark
 svn co https://github.com/immortalwrt/packages/trunk/utils/coremark feeds/packages/utils/coremark
-sed -i 's,default 2,default 8,g' feeds/packages/utils/coremark/Makefile
-sed -i 's,default n,default y,g' feeds/packages/utils/coremark/Makefile
 # Autoreboot
 svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-autoreboot package/lean/luci-app-autoreboot
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-autoreboot package/lean/luci-app-autoreboot
