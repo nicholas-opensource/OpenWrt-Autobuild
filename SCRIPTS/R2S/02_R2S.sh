@@ -12,11 +12,13 @@ sed -i '/set_interface_core 4 "eth1"/a\set_interface_core 1 "ff150000" "ff150000
 sed -i '/;;/i\ethtool -K eth0 rx off tx off && logger -t disable-offloading "disabed rk3328 ethernet tcp/udp offloading tx/rx"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
 # Patch i2c0
 cp -f ../PATCH/new/main/201-rockchip-rk3328-add-i2c0-controller-for-nanopi-r2s.patch ./target/linux/rockchip/patches-5.4/201-rockchip-rk3328-add-i2c0-controller-for-nanopi-r2s.patch
+# Patch to adjust kernel dma coherent-pool size
+cp -f ../PATCH/new/main/911-kernel-dma-adjust-default-coherent_pool-to-2MiB.patch ./target/linux/rockchip/patches-5.4/911-kernel-dma-adjust-default-coherent_pool-to-2MiB.patch
 # Overclock or not
 cp -f ../PATCH/new/overclock/999-rk3328-enable-1512mhz-and-minimum-at-816mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1512mhz-and-minimum-at-816mhz.patch
 #cp -f ../PATCH/new/overclock/999-rk3328-enable-1608mhz-and-minimum-at-816mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1608mhz-and-minimum-at-816mhz.patch
 # Swap LAN & WAN
-#patch -p1 < ../PATCH/new/main/0001-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
+#patch -p1 < ../PATCH/new/main/0002-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
 # Update r8152 driver
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/ctcgfw/r8152 package/new/r8152
 #sed -i '/rtl8152/d' ./target/linux/rockchip/image/armv8.mk
