@@ -3,7 +3,7 @@ name: R2S-OpenWrt
 on:
   push:
     branches: 
-      - dtsi-test
+      - main
     paths:
       - '.github/workflows/R2S-OpenWrt.yml'
       - 'SEED/R2S/config.seed'
