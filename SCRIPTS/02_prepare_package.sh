@@ -64,8 +64,8 @@ rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # Add Extra Proxy Ports and Change Lists
 pushd package/lean/luci-app-ssr-plus/root/etc/init.d
 sed -i 's/143/143,25,5222/' shadowsocksr
-sed -i 's,ispip.clang.cn/all_cn,cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute,' shadowsocksr
-sed -i 's,YW5vbnltb3Vz/domain-list-community@release/gfwlist,Loyalsoldier/v2ray-rules-dat@release/gfw,' shadowsocksr
+sed -i 's,ispip.clang.cn/all_cn,raw.sevencdn.com/QiuSimons/Chnroute/master/dist/chnroute/chnroute,' shadowsocksr
+sed -i 's,YW5vbnltb3Vz/domain-list-community/release/gfwlist,Loyalsoldier/v2ray-rules-dat/release/gfw,' shadowsocksr
 popd
 # SSRP Dependies
 rm -rf ./feeds/packages/net/xray-core
