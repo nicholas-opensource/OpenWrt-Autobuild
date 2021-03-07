@@ -7,13 +7,11 @@ sed -i 's/Os/O2/g' include/target.mk
 # Update feeds
 ./scripts/feeds update -a && ./scripts/feeds install -a
 # Irqbalance
-sed -i 's/0/1/g' feeds/packages/utils/irqbalance/files/irqbalance.config
+sed -i 's/0/1/' feeds/packages/utils/irqbalance/files/irqbalance.config
 
 ## Important Patches
 # ARM64: Add CPU model name in proc cpuinfo
 wget -P target/linux/generic/pending-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.4/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
-# LuCI network
-#patch -p1 < ../PATCH/new/main/luci_network-add-packet-steering.patch
 # Patch jsonc
 patch -p1 < ../PATCH/new/package/use_json_object_new_int64.patch
 # Patch dnsmasq
@@ -33,9 +31,6 @@ patch -p1 < ../PATCH/new/package/luci-app-firewall_add_fullcone.patch
 cp -rf ../PATCH/duplicate/fullconenat ./package/network/fullconenat
 
 ## Extra Packages
-# Arpbind
-#svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-arpbind package/lean/luci-app-arpbind
-#svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-arpbind package/lean/luci-app-arpbind
 # AutoCore
 svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/autocore package/lean/autocore
 rm -rf ./feeds/packages/utils/coremark
