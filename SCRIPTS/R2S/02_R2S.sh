@@ -4,26 +4,25 @@ clear
 ## Custom-made
 # GCC CFlags for R2S
 sed -i 's,-mcpu=generic,-march=armv8-a+crypto+crc -mcpu=cortex-a53+crypto+crc -mtune=cortex-a53,g' include/target.mk
+# Mbedtls AES HW-Crypto
+cp -f ../PATCH/new/package/100-Implements-AES-and-GCM-with-ARMv8-Crypto-Extensions.patch ./package/libs/mbedtls/patches/100-Implements-AES-and-GCM-with-ARMv8-Crypto-Extensions.patch
 #sed -i 's/O2/O2/g' ./rules.mk
-# IRQ
-sed -i '/set_interface_core 4 "eth1"/a\set_interface_core 8 "ff160000" "ff160000.i2c"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
-sed -i '/set_interface_core 4 "eth1"/a\set_interface_core 1 "ff150000" "ff150000.i2c"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
-# Disabed rk3328 ethernet tcp/udp offloading tx/rx
-sed -i '/;;/i\ethtool -K eth0 rx off tx off && logger -t disable-offloading "disabed rk3328 ethernet tcp/udp offloading tx/rx"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
-# Patch i2c0
-cp -f ../PATCH/new/main/201-rockchip-rk3328-add-i2c0-controller-for-nanopi-r2s.patch ./target/linux/rockchip/patches-5.4/201-rockchip-rk3328-add-i2c0-controller-for-nanopi-r2s.patch
-# Patch to adjust kernel dma coherent-pool size
-cp -f ../PATCH/new/main/911-kernel-dma-adjust-default-coherent_pool-to-2MiB.patch ./target/linux/rockchip/patches-5.4/911-kernel-dma-adjust-default-coherent_pool-to-2MiB.patch
+# DMC
+rm -rf ./target/linux/rockchip
+svn co https://github.com/immortalwrt/immortalwrt/branches/master/target/linux/rockchip target/linux/rockchip
+rm -rf ./package/boot/uboot-rockchip
+svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/boot/uboot-rockchip package/boot/uboot-rockchip
+rm -rf ./target/linux/rockchip/patches-5.4/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
 # Overclock or not
 cp -f ../PATCH/new/overclock/999-rk3328-enable-1512mhz-and-minimum-at-816mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1512mhz-and-minimum-at-816mhz.patch
 #cp -f ../PATCH/new/overclock/999-rk3328-enable-1608mhz-and-minimum-at-816mhz.patch ./target/linux/rockchip/patches-5.4/999-rk3328-enable-1608mhz-and-minimum-at-816mhz.patch
 # Swap LAN & WAN
-#patch -p1 < ../PATCH/new/main/0002-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
+#patch -p1 < ../PATCH/new/custom/0001-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
+# IRQ and disabed rk3328 ethernet tcp/udp offloading tx/rx
+patch -p1 < ../PATCH/new/custom/0002-IRQ-and-disable-eth0-tcp-udp-offloading-tx-rx.patch
 # Update r8152 driver
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/ctcgfw/r8152 package/new/r8152
 #sed -i '/rtl8152/d' ./target/linux/rockchip/image/armv8.mk
-# 3328 Add idle
-wget -P target/linux/rockchip/patches-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/rockchip/patches-5.4/007-arm64-dts-rockchip-Add-RK3328-idle-state.patch
 # Addition-Trans-zh-master
 cp -rf ../PATCH/duplicate/addition-trans-zh-r2s ./package/lean/lean-translate
 # Add cputemp.sh

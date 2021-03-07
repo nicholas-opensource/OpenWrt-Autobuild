@@ -35,9 +35,13 @@ Null means "No Services"
 
 4.Opkg vermagic
 
-5.Port some old softwares for the LuCI master by [msylgj](https://github.com/msylgj)
+5.Fix DDR4 333MHz problem
 
-6.Remove IPv6 by default
+6.Shadowsocks enable AES hardware crypto
+
+7.Port some old softwares for the LuCI master by [msylgj](https://github.com/msylgj)
+
+8.Remove IPv6 by default
 
   * If you do need IPv6
 
@@ -59,6 +63,7 @@ uci commit dhcp
   * [ImmortalWrt](https://github.com/immortalwrt)
   * [CN_SZTL](https://github.com/1715173329)
   * [quintus-lab](https://github.com/quintus-lab)
+  * [AmadeusGhost](https://github.com/AmadeusGhost)
   * [RikudouPatrickstar](https://github.com/RikudouPatrickstar)
   * [KaneGreen](https://github.com/KaneGreen)
   * [msylgj](https://github.com/msylgj)
