@@ -3,7 +3,7 @@ clear
 
 ## Prepare
 # GCC CFLAGS
-sed -i 's/Os/O2/g' include/target.mk
+sed -i 's/Os/O3/g' include/target.mk
 # Update feeds
 ./scripts/feeds update -a && ./scripts/feeds install -a
 # Irqbalance

@@ -9,23 +9,18 @@ cp -f ../PATCH/new/package/100-Implements-AES-and-GCM-with-ARMv8-Crypto-Extensio
 # DMC
 rm -rf ./target/linux/rockchip
 svn co https://github.com/immortalwrt/immortalwrt/branches/master/target/linux/rockchip target/linux/rockchip
+sed -i '/5.10/d' target/linux/rockchip/Makefile
 rm -rf ./package/boot/uboot-rockchip
 svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/boot/uboot-rockchip package/boot/uboot-rockchip
 svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/boot/arm-trusted-firmware-rk3328 package/boot/arm-trusted-firmware-rk3328
-sed -i '/5.10/d' target/linux/rockchip/Makefile
-rm -rf ./target/linux/rockchip/patches-5.10
-rm -rf ./target/linux/rockchip/armv8/config-5.10
 rm -rf ./target/linux/rockchip/patches-5.4/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
 # Overclock or not
 cp -f ../PATCH/new/overclock/999-rk3328-enable-1512mhz-and-minimum-at-816mhz.patch ./target/linux/rockchip/patches-5.4/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
 #cp -f ../PATCH/new/overclock/999-rk3328-enable-1608mhz-and-minimum-at-816mhz.patch ./target/linux/rockchip/patches-5.4/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
 # Swap LAN & WAN
-#patch -p1 < ../PATCH/new/custom/0001-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
+patch -p1 < ../PATCH/new/custom/0001-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
 # IRQ and disabed rk3328 ethernet tcp/udp offloading tx/rx
-#patch -p1 < ../PATCH/new/custom/0002-IRQ-and-disable-eth0-tcp-udp-offloading-tx-rx.patch
-sed -i '/set_interface_core 4 "eth1"/a\set_interface_core 8 "ff160000" "ff160000.i2c"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
-sed -i '/set_interface_core 4 "eth1"/a\set_interface_core 1 "ff150000" "ff150000.i2c"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
-sed -i '/;;/i\ethtool -K eth0 rx off tx off && logger -t disable-offloading "disabed rk3328 ethernet tcp/udp offloading tx/rx"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
+patch -p1 < ../PATCH/new/custom/0002-IRQ-and-disable-eth0-tcp-udp-offloading-tx-rx.patch
 # Update r8152 driver
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/ctcgfw/r8152 package/new/r8152
 #sed -i '/rtl8152/d' ./target/linux/rockchip/image/armv8.mk
