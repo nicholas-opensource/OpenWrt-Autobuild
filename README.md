@@ -4,44 +4,44 @@
 This repository is based on [QiuSimons/R2S-R4S-X86-OpenWrt](https://github.com/QiuSimons/R2S-R4S-X86-OpenWrt).  
 
 All source code in this repository uses [GNU GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.html).  
-If your rights are violated by this repository, please contact me.  
+If this repository violates your legal rights, please contact me.  
 
 This repository is for general informational purposes only. All content in the repository is provided in good faith. However, we make no representation or warranty of any kind, express or implied,
 regarding the accuracy, adequacy, validity, reliability, availability, or completeness of the repository.  
 
+---
 ### Key Infomations
 
 Login IP：192.168.1.1 
 
 Password：None
 
+R2S：Swap LAN/WAN ports
+
 ### Version Informations
 
-OpenWrt original v21.02-snapshot
+OpenWrt official v21.02-snapshot
 
-Doge contains JD-DailyBonus
+Doge contains JD-DailyBonus[.](https://github.com/fw876/helloworld)
 
-[BingBing](https://weibo.com/u/6512991534) contains nothing
+[BingBing](https://weibo.com/u/6512991534) contains nothing[.](https://github.com/fw876/helloworld)
 
 Null means "No Services"
 
+---
 ### Feature
 
-1.Stability first
+1.Based on official OpenWrt
 
-2.Only the most basic softwares
+2.Only contain the most basic software for the stability
 
 3.Fullcone NAT supported
 
-4.Opkg vermagic
+4.Opkg vermagic matched with OpenWrt releases ( You can install the software as if you have AppStore~ )
 
-5.Fix DDR4 333MHz problem
+5.Port some old software for the LuCI master by [msylgj](https://github.com/msylgj)
 
-6.Shadowsocks enable AES hardware crypto
-
-7.Port some old softwares for the LuCI master by [msylgj](https://github.com/msylgj)
-
-8.Remove IPv6 by default
+6.Disable IPv6 by default
 
   * If you do need IPv6
 
@@ -53,10 +53,15 @@ uci set dhcp.lan.ra_management='1'
 uci del dhcp.@dnsmasq[0].rebind_protection='1'
 uci commit dhcp
 ```
+#### R2S Feature
+
+1.Fix DDR4 333MHz problem
+
+2.Shadowsocks/Xray-core ( mbedTLS/Golang ) envokes armv8-ce to get better AES-Crypto performance
 
 ![](/Screenshots/main.jpeg)
 
-## Thanks to all friends in NanoPi R2S Club
+## Thanks to all my friends in NanoPi R2S Club
 
 * Especially Thanks
   * [QiuSimons](https://github.com/QiuSimons)
