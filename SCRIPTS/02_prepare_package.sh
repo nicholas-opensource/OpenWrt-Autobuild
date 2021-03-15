@@ -8,6 +8,11 @@ sed -i 's/Os/O3/g' include/target.mk
 ./scripts/feeds update -a && ./scripts/feeds install -a
 # Irqbalance
 sed -i 's/0/1/' feeds/packages/utils/irqbalance/files/irqbalance.config
+# Victoria's Secret
+rm -rf ./scripts/download.pl
+rm -rf ./include/download.mk
+wget -P scripts/ https://github.com/immortalwrt/immortalwrt/raw/master/scripts/download.pl
+wget -P include/ https://github.com/immortalwrt/immortalwrt/raw/master/include/download.mk
 
 ## Important Patches
 # ARM64: Add CPU model name in proc cpuinfo
@@ -49,25 +54,21 @@ popd
 svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-ramfree package/lean/luci-app-ramfree
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-ramfree package/lean/luci-app-ramfree
 # SSRP
-#svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
-svn co https://github.com/nicholas-opensource/Others/trunk/luci-app-ssr-plus-183-8 package/lean/luci-app-ssr-plus
+svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
+#svn co https://github.com/Mattraks/helloworld/branches/Preview/luci-app-ssr-plus package/lean/luci-app-ssr-plus
+#svn co https://github.com/nicholas-opensource/Others/trunk/luci-app-ssr-plus-183-8 package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # Merge Pull Requests from Mattraks
 #pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/426.patch | patch -p1
+#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/430.patch | patch -p1
 #popd
-# Add Extra Proxy Ports and Change Lists
-pushd package/lean/luci-app-ssr-plus/root/etc/init.d
-sed -i 's/143/143,25,5222/' shadowsocksr
-sed -i 's,ispip.clang.cn/all_cn,raw.sevencdn.com/QiuSimons/Chnroute/master/dist/chnroute/chnroute,' shadowsocksr
-sed -i 's,YW5vbnltb3Vz/domain-list-community/release/gfwlist,Loyalsoldier/v2ray-rules-dat/release/gfw,' shadowsocksr
-popd
 # SSRP Dependies
 rm -rf ./feeds/packages/net/xray-core
 rm -rf ./feeds/packages/net/kcptun
 rm -rf ./feeds/packages/net/shadowsocks-libev
 rm -rf ./feeds/packages/net/proxychains-ng
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/shadowsocksr-libev package/lean/shadowsocksr-libev
+svn co https://github.com/fw876/helloworld/trunk/shadowsocks-rust package/lean/shadowsocks-rust
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/pdnsd-alt package/lean/pdnsd
 svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-core
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/kcptun package/lean/kcptun
@@ -88,6 +89,12 @@ svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naivepr
 #svn co https://github.com/fw876/helloworld/trunk/trojan-go package/lean/trojan-go
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
+# Add Extra Proxy Ports and Change Lists
+pushd package/lean/luci-app-ssr-plus/root/etc/init.d
+sed -i 's/143/143,25,5222/' shadowsocksr
+sed -i 's,ispip.clang.cn/all_cn,raw.sevencdn.com/QiuSimons/Chnroute/master/dist/chnroute/chnroute,' shadowsocksr
+sed -i 's,YW5vbnltb3Vz/domain-list-community/release/gfwlist,Loyalsoldier/v2ray-rules-dat/release/gfw,' shadowsocksr
+popd
 
 ## Ending
 # Lets Fuck

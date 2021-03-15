@@ -73,3 +73,5 @@ CONFIG_CRYPTO_SHA512_ARM64=y
 CONFIG_CRYPTO_SM3_ARM64_CE=y
 CONFIG_CRYPTO_SM4_ARM64_CE=y
 ' >> ./target/linux/rockchip/armv8/config-5.4
+
+exit 0
