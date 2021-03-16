@@ -45,28 +45,23 @@ svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-a
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-autoreboot package/lean/luci-app-autoreboot
 # JD-DailyBonus
 git clone --depth 1 https://github.com/jerrykuku/node-request.git package/new/node-request
-git clone --depth 1 https://github.com/jerrykuku/luci-app-jd-dailybonus.git package/new/luci-app-jd-dailybonus
-#git clone -b develop --depth 1 https://github.com/Promix953/luci-app-jd-dailybonus.git package/new/luci-app-jd-dailybonus
-pushd package/new/luci-app-jd-dailybonus
-sed -i 's/wget-ssl/wget/g' root/usr/share/jd-dailybonus/newapp.sh luasrc/controller/jd-dailybonus.lua
-popd
+#git clone --depth 1 https://github.com/jerrykuku/luci-app-jd-dailybonus.git package/new/luci-app-jd-dailybonus
+svn co https://github.com/nicholas-opensource/Others/trunk/luci-app-jd-dailybonus package/new/luci-app-jd-dailybonus
 # Ram-free
 svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-ramfree package/lean/luci-app-ramfree
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-ramfree package/lean/luci-app-ramfree
 # SSRP
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
-#svn co https://github.com/Mattraks/helloworld/branches/Preview/luci-app-ssr-plus package/lean/luci-app-ssr-plus
-#svn co https://github.com/nicholas-opensource/Others/trunk/luci-app-ssr-plus-183-8 package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # Merge Pull Requests from Mattraks
 #pushd package/lean
 #wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/430.patch | patch -p1
 #popd
 # SSRP Dependies
-rm -rf ./feeds/packages/net/xray-core
 rm -rf ./feeds/packages/net/kcptun
-rm -rf ./feeds/packages/net/shadowsocks-libev
 rm -rf ./feeds/packages/net/proxychains-ng
+rm -rf ./feeds/packages/net/shadowsocks-libev
+rm -rf ./feeds/packages/net/xray-core
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/shadowsocksr-libev package/lean/shadowsocksr-libev
 svn co https://github.com/fw876/helloworld/trunk/shadowsocks-rust package/lean/shadowsocks-rust
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/pdnsd-alt package/lean/pdnsd
