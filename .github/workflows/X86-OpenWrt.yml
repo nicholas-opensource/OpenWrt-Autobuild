@@ -3,11 +3,11 @@ name: X86-OpenWrt
 on:
   push:
     branches: 
-      - main
-#  paths:
-#    - '.github/workflows/X86-OpenWrt.yml'
-#    - 'SEED/X86/config.seed'
-#    - 'SCRIPTS/switch'
+      - none
+    paths:
+      - '.github/workflows/X86-OpenWrt.yml'
+      - 'SEED/X86/config.seed'
+      - 'SCRIPTS/switch'
 #  watch:
 #    types: [started]
 
