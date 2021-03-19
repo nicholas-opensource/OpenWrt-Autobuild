@@ -2,12 +2,10 @@
 clear
 
 ## Prepare
-# GCC CFLAGS
-sed -i 's/Os/O3/g' include/target.mk
 # Update feeds
 ./scripts/feeds update -a && ./scripts/feeds install -a
 # Irqbalance
-sed -i 's/0/1/' feeds/packages/utils/irqbalance/files/irqbalance.config
+sed -i "s/enabled '0'/enabled '1'/g" feeds/packages/utils/irqbalance/files/irqbalance.config
 # Victoria's Secret
 rm -rf ./scripts/download.pl
 rm -rf ./include/download.mk
@@ -54,9 +52,9 @@ svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-a
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # Merge Pull Requests from Mattraks
-#pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/430.patch | patch -p1
-#popd
+pushd package/lean
+wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/442.patch | patch -p1
+popd
 # SSRP Dependies
 rm -rf ./feeds/packages/net/kcptun
 rm -rf ./feeds/packages/net/proxychains-ng

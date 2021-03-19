@@ -3,7 +3,7 @@ name: X86-OpenWrt
 on:
   push:
     branches: 
-      - none
+      - main
     paths:
       - '.github/workflows/X86-OpenWrt.yml'
       - 'SEED/X86/config.seed'
@@ -70,6 +70,7 @@ jobs:
         cp -r ../SCRIPTS/. ./
         /bin/bash 02_prepare_package.sh
         /bin/bash 02_X86.sh
+        chmod -R 755 ./
     - name: Convert Translation
       run: |
         cd openwrt
