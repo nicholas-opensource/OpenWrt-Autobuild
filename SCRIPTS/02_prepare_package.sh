@@ -41,10 +41,6 @@ svn co https://github.com/immortalwrt/packages/trunk/utils/coremark feeds/packag
 # Autoreboot
 svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-autoreboot package/lean/luci-app-autoreboot
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-autoreboot package/lean/luci-app-autoreboot
-# JD-DailyBonus
-git clone --depth 1 https://github.com/jerrykuku/node-request.git package/new/node-request
-#git clone --depth 1 https://github.com/jerrykuku/luci-app-jd-dailybonus.git package/new/luci-app-jd-dailybonus
-svn co https://github.com/nicholas-opensource/Others/trunk/luci-app-jd-dailybonus package/new/luci-app-jd-dailybonus
 # Ram-free
 svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-app-ramfree package/lean/luci-app-ramfree
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-ramfree package/lean/luci-app-ramfree

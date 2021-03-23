@@ -16,15 +16,11 @@ Login IP：192.168.1.1
 
 Password：None
 
-R2S：Swap LAN/WAN ports
-
 ### Version Informations
 
 OpenWrt official v21.02-snapshot
 
-Doge contains JD-DailyBonus[.](https://github.com/fw876/helloworld)
-
-[BingBing](https://weibo.com/u/6512991534) contains nothing[.](https://github.com/fw876/helloworld)
+[BingBing](https://weibo.com/u/6512991534) contains [SSRP](https://github.com/fw876/helloworld)
 
 Null means "No Services"
 
@@ -57,7 +53,7 @@ uci commit dhcp
 
 1.Fix DDR4 333MHz problem
 
-2.Shadowsocks/Xray-core ( mbedTLS/Golang ) envokes armv8-ce to get better AES-Crypto performance
+2.Replaced [Shadowsocks-libev](https://github.com/shadowsocks/shadowsocks-libev) with [Shadowsocks-rust](https://github.com/shadowsocks/shadowsocks-rust) for the excellent performance
 
 ![](/Screenshots/main.jpeg)
 
