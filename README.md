@@ -22,7 +22,7 @@ OpenWrt official v21.02-snapshot
 
 [BingBing](https://weibo.com/u/6512991534) contains [SSRP](https://github.com/fw876/helloworld)
 
-Null means "No Services"
+[Anne Hathaway](https://www.instagram.com/annehathaway/) means "No Services"
 
 ---
 ### Feature
@@ -51,9 +51,12 @@ uci commit dhcp
 ```
 #### R2S Feature
 
-1.Fix DDR4 333MHz problem
+1.Fixed DDR4 333MHz problem
 
-2.Replaced [Shadowsocks-libev](https://github.com/shadowsocks/shadowsocks-libev) with [Shadowsocks-rust](https://github.com/shadowsocks/shadowsocks-rust) for the excellent performance
+2.Replaced [Shadowsocks-libev](https://github.com/shadowsocks/shadowsocks-libev) with [Shadowsocks-rust](https://github.com/shadowsocks/shadowsocks-rust) for the excellent performance.
+  * If your Shadowsocks are running with a non-AEAD encrypt method, please convert into Xray-core to run Shadowsocks or a terrible speed of fewer than 1 Mbps. And it's strongly recommended that you abandon outdated encrypt methods. 
+
+3.Support TF card with a minimum size of 512MB
 
 ![](/Screenshots/main.jpeg)
 
