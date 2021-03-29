@@ -79,10 +79,11 @@ svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naivepr
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
 # Add Extra Proxy Ports and Change Lists
-pushd package/lean/luci-app-ssr-plus/root/etc/init.d
-sed -i 's/143/143,25,5222/' shadowsocksr
-sed -i 's,ispip.clang.cn/all_cn,raw.sevencdn.com/QiuSimons/Chnroute/master/dist/chnroute/chnroute,' shadowsocksr
-sed -i 's,YW5vbnltb3Vz/domain-list-community/release/gfwlist,Loyalsoldier/v2ray-rules-dat/release/gfw,' shadowsocksr
+pushd package/lean/luci-app-ssr-plus
+sed -i 's/143/143,25,5222/' root/etc/init.d/shadowsocksr
+sed -i 's,ispip.clang.cn/all_cn,raw.sevencdn.com/QiuSimons/Chnroute/master/dist/chnroute/chnroute,' root/etc/init.d/shadowsocksr
+sed -i 's,YW5vbnltb3Vz/domain-list-community/release/gfwlist,Loyalsoldier/v2ray-rules-dat/release/gfw,' root/etc/init.d/shadowsocksr
+sed -i '/Clang.CN.CIDR/a\o:value("https://raw.sevencdn.com/QiuSimons/Chnroute/master/dist/chnroute/chnroute.txt", translate("QiuSimons/Chnroute"))' luasrc/model/cbi/shadowsocksr/advanced.lua
 popd
 
 ## Ending
