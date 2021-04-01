@@ -48,10 +48,6 @@ svn co https://github.com/nicholas-opensource/OpenWrt_luci-app/trunk/lean/luci-a
 # SSRP
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
-# Merge Pull Requests from Mattraks
-#pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/442.patch | patch -p1
-#popd
 # SSRP Dependies
 rm -rf ./feeds/packages/net/kcptun
 rm -rf ./feeds/packages/net/proxychains-ng
@@ -79,6 +75,10 @@ svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naivepr
 #svn co https://github.com/fw876/helloworld/trunk/trojan-go package/lean/trojan-go
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
+# Merge Pull Requests from Mattraks
+pushd package/lean
+wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/464.patch | patch -p1
+popd
 # Add Extra Proxy Ports and Change Lists
 pushd package/lean/luci-app-ssr-plus
 sed -i 's/143/143,25,5222/' root/etc/init.d/shadowsocksr
