@@ -76,15 +76,16 @@ svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naivepr
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
 # Merge Pull Requests from Mattraks
-pushd package/lean
-wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/464.patch | patch -p1
-popd
+#pushd package/lean
+#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/464.patch | patch -p1
+#popd
 # Add Extra Proxy Ports and Change Lists
 pushd package/lean/luci-app-ssr-plus
 sed -i 's/143/143,25,5222/' root/etc/init.d/shadowsocksr
-sed -i 's,ispip.clang.cn/all_cn,raw.sevencdn.com/QiuSimons/Chnroute/master/dist/chnroute/chnroute,' root/etc/init.d/shadowsocksr
-sed -i 's,YW5vbnltb3Vz/domain-list-community/release/gfwlist,Loyalsoldier/v2ray-rules-dat/release/gfw,' root/etc/init.d/shadowsocksr
-sed -i '/Clang.CN.CIDR/a\o:value("https://raw.sevencdn.com/QiuSimons/Chnroute/master/dist/chnroute/chnroute.txt", translate("QiuSimons/Chnroute"))' luasrc/model/cbi/shadowsocksr/advanced.lua
+sed -i 's,ispip.clang.cn/all_cn,cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute,' root/etc/init.d/shadowsocksr
+sed -i 's,ghproxy.com/https://raw.githubusercontent.com/YW5vbnltb3Vz/domain-list-community/release/gfwlist,cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/gfw,' root/etc/init.d/shadowsocksr
+sed -i 's,ghproxy.com/https://raw.githubusercontent.com/QiuSimons/Netflix_IP/,cdn.jsdelivr.net/gh/QiuSimons/Netflix_IP@,' root/etc/init.d/shadowsocksr
+sed -i '/Clang.CN.CIDR/a\o:value("https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute.txt", translate("QiuSimons/Chnroute"))' luasrc/model/cbi/shadowsocksr/advanced.lua
 popd
 
 ## Ending
