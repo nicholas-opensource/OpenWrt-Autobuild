@@ -83,8 +83,7 @@ svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naivepr
 pushd package/lean/luci-app-ssr-plus
 sed -i 's/143/143,25,5222/' root/etc/init.d/shadowsocksr
 sed -i 's,ispip.clang.cn/all_cn,cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute,' root/etc/init.d/shadowsocksr
-sed -i 's,ghproxy.com/https://raw.githubusercontent.com/YW5vbnltb3Vz/domain-list-community/release/gfwlist,cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/gfw,' root/etc/init.d/shadowsocksr
-sed -i 's,ghproxy.com/https://raw.githubusercontent.com/QiuSimons/Netflix_IP/,cdn.jsdelivr.net/gh/QiuSimons/Netflix_IP@,' root/etc/init.d/shadowsocksr
+sed -i 's,ghproxy.com/https://raw.githubusercontent.com/YW5vbnltb3Vz/domain-list-community/release/gfwlist,cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/gfw,' root/etc/init.d/shadowsocksr luasrc/model/cbi/shadowsocksr/advanced.lua
 sed -i '/Clang.CN.CIDR/a\o:value("https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute.txt", translate("QiuSimons/Chnroute"))' luasrc/model/cbi/shadowsocksr/advanced.lua
 popd
 
