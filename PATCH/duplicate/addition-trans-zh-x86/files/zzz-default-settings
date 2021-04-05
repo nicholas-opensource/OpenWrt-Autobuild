@@ -56,6 +56,11 @@ opkg flag hold luci-app-firewall
 opkg flag hold firewall
 opkg flag hold dnsmasq-full
 #sync; echo 3 > /proc/sys/vm/drop_caches
+rm -f /etc/rpcd_10_system.js
+rm -f /www/luci-static/resources/view/status/include/10_system.js
+cp -f /rom/etc/rpcd_10_system.js /www/luci-static/resources/view/status/include/10_system.js
+[ -f '/etc/fucked' ] && sed -i '/Source Code/d' /www/luci-static/resources/view/status/include/10_system.js
+touch /etc/fucked
 
 #Flush LuCI cache
 rm -rf /tmp/luci-modulecache
