@@ -23,9 +23,11 @@ uci commit uhttpd
 /etc/init.d/uhttpd restart
 
 #Remove IPv6
+uci delete network.globals.ula_prefix
 uci delete network.lan.ip6assign
 uci delete network.wan6
 uci delete dhcp.lan.ra
+uci delete dhcp.lan.ra_management
 uci delete dhcp.lan.dhcpv6
 uci delete dhcp.lan.ndp
 uci commit dhcp
