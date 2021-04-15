@@ -11,6 +11,7 @@ rm -rf ./scripts/download.pl
 rm -rf ./include/download.mk
 wget -P scripts/ https://github.com/immortalwrt/immortalwrt/raw/master/scripts/download.pl
 wget -P include/ https://github.com/immortalwrt/immortalwrt/raw/master/include/download.mk
+sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lang/node/Makefile
 
 ## Important Patches
 # ARM64: Add CPU model name in proc cpuinfo
@@ -75,9 +76,9 @@ svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naivepr
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
 # Merge Pull Requests from Mattraks
-#pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/464.patch | patch -p1
-#popd
+pushd package/lean
+wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/473.patch | patch -Rp1
+popd
 # Add Extra Proxy Ports and Change Lists
 pushd package/lean/luci-app-ssr-plus
 sed -i 's/143/143,25,5222/' root/etc/init.d/shadowsocksr
