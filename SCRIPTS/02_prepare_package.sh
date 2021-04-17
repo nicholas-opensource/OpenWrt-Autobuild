@@ -85,10 +85,10 @@ svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naivepr
 #svn co https://github.com/fw876/helloworld/trunk/trojan-go package/lean/trojan-go
 #svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
-# Merge Pull Requests from Mattraks
-#pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/473.patch | patch -Rp1
-#popd
+# Merge Pull Requests from developers
+pushd package/lean
+wget -qO - https://github.com/QiuSimons/helloworld-fw876/commit/c1674ad.patch | patch -p1
+popd
 # Add Extra Proxy Ports and Change Lists
 pushd package/lean/luci-app-ssr-plus
 sed -i 's/143/143,25,5222/' root/etc/init.d/shadowsocksr
