@@ -100,7 +100,7 @@ jobs:
     - name: Make Download
       run: |
         cd openwrt
-        make download -j10
+        make download -j48
     - name: Make Toolchain
       run: |
         cd openwrt

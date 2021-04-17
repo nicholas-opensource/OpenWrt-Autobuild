@@ -40,7 +40,7 @@ uci commit network
 
 #Firewall
 uci set firewall.@defaults[0].fullcone='1'
-uci set firewall.@defaults[0].flow_offloading='1'
+uci set firewall.@defaults[0].flow_offloading='0'
 uci commit firewall
 
 #dnsmasq
