@@ -87,6 +87,7 @@ svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naivepr
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
 # Merge Pull Requests from developers
 pushd package/lean
+wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/486.patch | patch -p1
 wget -qO - https://github.com/QiuSimons/helloworld-fw876/commit/c1674ad.patch | patch -p1
 popd
 # Add Extra Proxy Ports and Change Lists

@@ -58,7 +58,7 @@ uci commit dhcp
 
 3.Support TF card with a minimum size of 512MB
 
-![](/Screenshots/main.jpeg)
+![](/Screenshots/main.jpg)
 
 ## Thanks to all my friends in NanoPi R2S Club
 
