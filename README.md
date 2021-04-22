@@ -18,7 +18,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v21.02-snapshot
+OpenWrt official v21.02.0-rc1
 
 [BingBing](https://weibo.com/u/6512991534) contains [SSRP](https://github.com/fw876/helloworld)
 
@@ -33,7 +33,7 @@ OpenWrt official v21.02-snapshot
 
 3.Fullcone NAT supported
 
-4.Opkg vermagic matched with OpenWrt releases ( You can install the software as if you have AppStore~ )
+4.Opkg vermagic matched with OpenWrt manifest ( You can install the software as if you have AppStore~ )
 
 5.Port some old software for the LuCI master by [msylgj](https://github.com/msylgj)
 
@@ -54,9 +54,11 @@ uci commit dhcp
 1.Fixed DDR4 333MHz problem
 
 2.Replaced [Shadowsocks-libev](https://github.com/shadowsocks/shadowsocks-libev) with [Shadowsocks-rust](https://github.com/shadowsocks/shadowsocks-rust) for the excellent performance.
-  * If your Shadowsocks are running with a non-AEAD encrypt method, please convert into Xray-core to run Shadowsocks or a terrible speed of fewer than 1 Mbps. And it's strongly recommended that you abandon outdated encrypt methods. 
+  * If your Shadowsocks are running with a non-AEAD encrypt method, please convert into Xray-core to run Shadowsocks or a terrible speed of fewer than 1 Mbps. And it's strongly recommended that you abandon outdated encrypt methods
 
-3.Support TF card with a minimum size of 512MB
+3.Remove frequencies below 800MHz (same voltage) for faster response
+
+4.Support TF card with a minimum size of 512MB
 
 ![](/Screenshots/main.jpg)
 
