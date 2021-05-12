@@ -11,7 +11,7 @@ rm -rf ./scripts/download.pl
 rm -rf ./include/download.mk
 wget -P scripts/ https://github.com/immortalwrt/immortalwrt/raw/master/scripts/download.pl
 wget -P include/ https://github.com/immortalwrt/immortalwrt/raw/master/include/download.mk
-echo "net.netfilter.nf_conntrack_helper=1" >> ./package/kernel/linux/files/sysctl-nf-conntrack.conf
+#echo "net.netfilter.nf_conntrack_helper=1" >> ./package/kernel/linux/files/sysctl-nf-conntrack.conf
 sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lang/node/Makefile
 
 ## Important Patches
@@ -64,28 +64,28 @@ rm -rf ./feeds/packages/net/kcptun
 rm -rf ./feeds/packages/net/proxychains-ng
 rm -rf ./feeds/packages/net/shadowsocks-libev
 rm -rf ./feeds/packages/net/xray-core
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/shadowsocksr-libev package/lean/shadowsocksr-libev
-svn co https://github.com/fw876/helloworld/trunk/shadowsocks-rust package/lean/shadowsocks-rust
+svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/dns2socks package/lean/dns2socks
+svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/microsocks package/lean/microsocks
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/pdnsd-alt package/lean/pdnsd
-svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-core
+svn co https://github.com/fw876/helloworld/trunk/tcping package/lean/tcping
+svn co https://github.com/fw876/helloworld/trunk/shadowsocksr-libev package/lean/shadowsocksr-libev
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/kcptun package/lean/kcptun
+svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naiveproxy
+svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/redsocks2 package/lean/redsocks2
+svn co https://github.com/coolsnowwolf/packages/trunk/net/shadowsocks-libev package/lean/shadowsocks-libev
+svn co https://github.com/fw876/helloworld/trunk/shadowsocks-rust package/lean/shadowsocks-rust
+svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/simple-obfs package/lean/simple-obfs
+svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/trojan package/lean/trojan
+svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/ipt2socks package/lean/ipt2socks
 svn co https://github.com/fw876/helloworld/trunk/v2ray-plugin package/lean/v2ray-plugin
 svn co https://github.com/fw876/helloworld/trunk/xray-plugin package/lean/xray-plugin
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/srelay package/lean/srelay
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/microsocks package/lean/microsocks
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/dns2socks package/lean/dns2socks
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/redsocks2 package/lean/redsocks2
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/proxychains-ng package/lean/proxychains-ng
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/ipt2socks package/lean/ipt2socks
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/simple-obfs package/lean/simple-obfs
-svn co https://github.com/coolsnowwolf/packages/trunk/net/shadowsocks-libev package/lean/shadowsocks-libev
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/trojan package/lean/trojan
-svn co https://github.com/fw876/helloworld/trunk/tcping package/lean/tcping
-svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naiveproxy
-#svn co https://github.com/fw876/helloworld/trunk/v2ray-core package/lean/v2ray-core
-#svn co https://github.com/fw876/helloworld/trunk/trojan-go package/lean/trojan-go
-#svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
+svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-core
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
+#svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/proxychains-ng package/lean/proxychains-ng
+#svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/srelay package/lean/srelay
+#svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
+#svn co https://github.com/fw876/helloworld/trunk/trojan-go package/lean/trojan-go
+#svn co https://github.com/fw876/helloworld/trunk/v2ray-core package/lean/v2ray-core
 # Merge Pull Requests from developers
 pushd package/lean
 #wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/509.patch | patch -p1
