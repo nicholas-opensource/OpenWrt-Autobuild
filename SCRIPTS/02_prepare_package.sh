@@ -9,8 +9,8 @@ sed -i "s/enabled '0'/enabled '1'/g" feeds/packages/utils/irqbalance/files/irqba
 # Victoria's Secret
 rm -rf ./scripts/download.pl
 rm -rf ./include/download.mk
-wget -P scripts/ https://github.com/immortalwrt/immortalwrt/raw/master/scripts/download.pl
-wget -P include/ https://github.com/immortalwrt/immortalwrt/raw/master/include/download.mk
+wget -P scripts/ https://github.com/immortalwrt/immortalwrt/raw/openwrt-21.02/scripts/download.pl
+wget -P include/ https://github.com/immortalwrt/immortalwrt/raw/openwrt-21.02/include/download.mk
 #echo "net.netfilter.nf_conntrack_helper=1" >> ./package/kernel/linux/files/sysctl-nf-conntrack.conf
 sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lang/node/Makefile
 
@@ -47,14 +47,15 @@ cp -f ../PATCH/duplicate/shortcut-fe ./package/base-files/files/etc/init.d
 
 ## Extra Packages
 # AutoCore
-svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/autocore package/lean/autocore
+svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/emortal/autocore package/emortal/autocore
+curl -sS https://raw.githubusercontent.com/nicholas-opensource/Others/master/add-openwrt.patch | git apply
 rm -rf ./feeds/packages/utils/coremark
 svn co https://github.com/immortalwrt/packages/trunk/utils/coremark feeds/packages/utils/coremark
 # Autoreboot
-svn co https://github.com/immortalwrt/immortalwrt/branches/openwrt-21.02/package/lean/luci-app-autoreboot package/lean/luci-app-autoreboot
+svn co https://github.com/immortalwrt/luci/branches/openwrt-21.02/applications/luci-app-autoreboot feeds/luci/applications/luci-app-autoreboot
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-autoreboot package/lean/luci-app-autoreboot
 # Ram-free
-svn co https://github.com/immortalwrt/immortalwrt/branches/openwrt-21.02/package/lean/luci-app-ramfree package/lean/luci-app-ramfree
+svn co https://github.com/immortalwrt/luci/branches/openwrt-21.02/applications/luci-app-ramfree feeds/luci/applications/luci-app-ramfree
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-ramfree package/lean/luci-app-ramfree
 # SSRP
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
@@ -83,7 +84,7 @@ svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-cor
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/proxychains-ng package/lean/proxychains-ng
 #svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/srelay package/lean/srelay
-#svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/lean/tcpping package/lean/tcpping
+#svn co https://github.com/immortalwrt/packages/trunk/package/net/tcpping feeds/packages/net/tcpping
 #svn co https://github.com/fw876/helloworld/trunk/trojan-go package/lean/trojan-go
 #svn co https://github.com/fw876/helloworld/trunk/v2ray-core package/lean/v2ray-core
 # Merge Pull Requests from developers
