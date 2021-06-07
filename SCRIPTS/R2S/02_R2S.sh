@@ -23,8 +23,13 @@ cp -f ../PATCH/new/overclock/999-rk3328-enable-1512mhz-and-minimum-at-816mhz.pat
 #cp -f ../PATCH/new/overclock/999-rk3328-enable-1608mhz-and-minimum-at-816mhz.patch ./target/linux/rockchip/patches-5.4/991-arm64-dts-rockchip-add-more-cpu-operating-points-for.patch
 # Patch i2c0
 cp -f ../PATCH/new/main/998-rockchip-enable-i2c0-on-NanoPi-R2S.patch ./target/linux/rockchip/patches-5.4/998-rockchip-enable-i2c0-on-NanoPi-R2S.patch
+# Add PWM fans
+#wget -P target/linux/rockchip/armv8/base-files/etc/init.d https://github.com/friendlyarm/friendlywrt/raw/master-v19.07.1/target/linux/rockchip-rk3328/base-files/etc/init.d/fa-rk3328-pwmfan
+#wget -P target/linux/rockchip/armv8/base-files/usr/bin https://github.com/friendlyarm/friendlywrt/raw/master-v19.07.1/target/linux/rockchip-rk3328/base-files/usr/bin/start-rk3328-pwm-fan.sh
 # Swap LAN & WAN
 #patch -p1 < ../PATCH/new/custom/0003-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
+# Temporary fix WAN mac
+sed -i "s/+1/1/g" target/linux/rockchip/armv8/base-files/etc/board.d/02_network
 # IRQ and disabed rk3328 ethernet tcp/udp offloading tx/rx
 patch -p1 < ../PATCH/new/main/0002-IRQ-and-disable-eth0-tcp-udp-offloading-tx-rx.patch
 # Update r8152 driver
