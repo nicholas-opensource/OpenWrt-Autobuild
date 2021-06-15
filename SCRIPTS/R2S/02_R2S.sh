@@ -15,7 +15,7 @@ cp -f ../PATCH/new/dmc/805-PM-devfreq-rockchip-dfi-add-more-soc-support.patch ./
 cp -f ../PATCH/new/dmc/806-arm64-dts-rockchip-rk3328-add-dfi-node.patch ./target/linux/rockchip/patches-5.4/806-arm64-dts-rockchip-rk3328-add-dfi-node.patch
 cp -f ../PATCH/new/dmc/807-arm64-dts-nanopi-r2s-add-rk3328-dmc-relate-node.patch ./target/linux/rockchip/patches-5.4/807-arm64-dts-nanopi-r2s-add-rk3328-dmc-relate-node.patch
 # 3328 Add idle
-cp -f ../PATCH/new/main/007-arm64-dts-rockchip-Add-RK3328-idle-state.patch ./target/linux/rockchip/patches-5.4/007-arm64-dts-rockchip-Add-RK3328-idle-state.patch
+cp -f ../PATCH/new/main/009-arm64-dts-rockchip-Add-RK3328-idle-state.patch ./target/linux/rockchip/patches-5.4/007-arm64-dts-rockchip-Add-RK3328-idle-state.patch
 # Patch to adjust kernel dma coherent-pool size
 cp -f ../PATCH/new/main/911-kernel-dma-adjust-default-coherent_pool-to-2MiB.patch ./target/linux/rockchip/patches-5.4/911-kernel-dma-adjust-default-coherent_pool-to-2MiB.patch
 # Overclock or not
