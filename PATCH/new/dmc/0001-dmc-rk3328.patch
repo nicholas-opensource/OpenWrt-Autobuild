@@ -1,8 +1,8 @@
-From 7a811c035ed752cad2a6705fe2391a7312bc8834 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 This is free software, licensed under the GNU General Public License v3
 From: Immortalwrt <https://immortalwrt.org>
 Repatch From: Nicholas Sun <OpenWrt-Autobuild@noreply.github.com>
-Date: Sun, 14 Mar 2021 04:34:10 +1100
+Date: Sun, 16 Jun 2021 17:22:37 +1100
 Subject: [PATCH] DMC for Nanopi R2S
 
 ---
@@ -25,7 +25,7 @@ Subject: [PATCH] DMC for Nanopi R2S
 
 diff --git a/package/boot/arm-trusted-firmware-rk3328/Makefile b/package/boot/arm-trusted-firmware-rk3328/Makefile
 new file mode 100644
-index 0000000..243fcac
+index 0000000..5e15e57
 --- /dev/null
 +++ b/package/boot/arm-trusted-firmware-rk3328/Makefile
 @@ -0,0 +1,55 @@
@@ -44,9 +44,9 @@ index 0000000..243fcac
 +
 +PKG_SOURCE_PROTO:=git
 +PKG_SOURCE_URL=https://github.com/rockchip-linux/rkbin.git
-+PKG_SOURCE_DATE:=2020-10-30
-+PKG_SOURCE_VERSION:=0bb1c512492386a72a3a0b5a0e18e49c636577b9
-+PKG_MIRROR_HASH:=6dffe95b83f37a280f98c105fce529f45e39ce333b24709a9645aac1352457ce
++PKG_SOURCE_DATE:=2021-06-01
++PKG_SOURCE_VERSION:=7d631e0d5b2d373b54d4533580d08fb9bd2eaad4
++PKG_MIRROR_HASH:=73deb217d7f1dc87bb7a32a1b6855f957aeeb21dca86cdd5840c463683dc0f7d
 +
 +PKG_MAINTAINER:=AmadeusGhost <amadeus@immortalwrt.org>
 +
@@ -67,14 +67,14 @@ index 0000000..243fcac
 +endef
 +
 +define Build/Compile
-+	mkimage -n rk3328 -T rksd -d $(PKG_BUILD_DIR)/bin/rk33/rk3328_ddr_333MHz_v1.16.bin $(PKG_BUILD_DIR)/idbloader.bin
++	mkimage -n rk3328 -T rksd -d $(PKG_BUILD_DIR)/bin/rk33/rk3328_ddr_333MHz_v1.17.bin $(PKG_BUILD_DIR)/idbloader.bin
 +	cat $(PKG_BUILD_DIR)/bin/rk33/rk322xh_miniloader_v2.50.bin >> $(PKG_BUILD_DIR)/idbloader.bin
-+	$(PKG_BUILD_DIR)/tools/trust_merger --replace bl31.elf $(PKG_BUILD_DIR)/bin/rk33/rk322xh_bl31_v1.44.elf $(PKG_BUILD_DIR)/trust.ini
++	$(PKG_BUILD_DIR)/tools/trust_merger --replace bl31.elf $(PKG_BUILD_DIR)/bin/rk33/rk322xh_bl31_v1.46.elf $(PKG_BUILD_DIR)/trust.ini
 +endef
 +
 +define Build/InstallDev
 +	$(INSTALL_DIR) -p $(STAGING_DIR_IMAGE)
-+	$(CP) $(PKG_BUILD_DIR)/bin/rk33/rk322xh_bl31_v1.44.elf $(STAGING_DIR_IMAGE)/
++	$(CP) $(PKG_BUILD_DIR)/bin/rk33/rk322xh_bl31_v1.46.elf $(STAGING_DIR_IMAGE)/
 +	$(CP) $(PKG_BUILD_DIR)/tools/loaderimage $(STAGING_DIR_IMAGE)/
 +	$(CP) $(PKG_BUILD_DIR)/idbloader.bin $(STAGING_DIR_IMAGE)/
 +	$(CP) $(PKG_BUILD_DIR)/trust.bin $(STAGING_DIR_IMAGE)/
@@ -106,10 +106,10 @@ index 0000000..b957974
 +[OUTPUT]
 +PATH=$(PKG_BUILD_DIR)/trust.bin
 diff --git a/package/boot/uboot-rockchip/Makefile b/package/boot/uboot-rockchip/Makefile
-index 393e8c3..cbd9d7d 100644
+index 393e8c3..177b36d 100644
 --- a/package/boot/uboot-rockchip/Makefile
 +++ b/package/boot/uboot-rockchip/Makefile
-@@ -29,9 +29,10 @@ define U-Boot/nanopi-r2s-rk3328
+@@ -29,10 +29,11 @@ define U-Boot/nanopi-r2s-rk3328
    NAME:=NanoPi R2S
    BUILD_DEVICES:= \
      friendlyarm_nanopi-r2s
@@ -118,10 +118,11 @@ index 393e8c3..cbd9d7d 100644
 -  ATF:=rk3328_bl31.elf
 +  DEPENDS:=+PACKAGE_u-boot-nanopi-r2s-rk3328:arm-trusted-firmware-rk3328
 +  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rk3328
-+  ATF:=rk322xh_bl31_v1.44.elf
-+  USE_RKBIN:=1
++  ATF:=rk322xh_bl31_v1.46.elf
    OF_PLATDATA:=$(1)
++  USE_RKBIN:=1
  endef
+ 
  
 @@ -85,8 +86,15 @@ endef
  
@@ -1587,5 +1588,5 @@ index 24b1c38..04a9aa8 100644
  endef
  TARGET_DEVICES += friendlyarm_nanopi-r2s
 -- 
-2.30.1
+2.32.0
 

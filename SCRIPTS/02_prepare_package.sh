@@ -25,9 +25,7 @@ patch -p1 < ../PATCH/new/package/dnsmasq-add-filter-aaaa-option.patch
 patch -p1 < ../PATCH/new/package/luci-add-filter-aaaa-option.patch
 cp -f ../PATCH/new/package/900-add-filter-aaaa-option.patch ./package/network/services/dnsmasq/patches/900-add-filter-aaaa-option.patch
 # Patch kernel to fix fullcone conflict
-pushd target/linux/generic/hack-5.4
-wget https://github.com/coolsnowwolf/lede/raw/master/target/linux/generic/hack-5.4/952-net-conntrack-events-support-multiple-registrant.patch
-popd
+wget -P target/linux/generic/hack-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.4/952-net-conntrack-events-support-multiple-registrant.patch
 # Patch firewall to enable fullcone
 mkdir package/network/config/firewall/patches
 wget -P package/network/config/firewall/patches/ https://github.com/immortalwrt/immortalwrt/raw/master/package/network/config/firewall/patches/fullconenat.patch
@@ -36,14 +34,12 @@ patch -p1 < ../PATCH/new/package/luci-app-firewall_add_fullcone.patch
 # FullCone modules
 cp -rf ../PATCH/duplicate/fullconenat ./package/network/fullconenat
 # SFE core patch
-pushd target/linux/generic/hack-5.4
-wget https://github.com/coolsnowwolf/lede/raw/master/target/linux/generic/hack-5.4/953-net-patch-linux-kernel-to-support-shortcut-fe.patch
-popd
+wget -P target/linux/generic/hack-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.4/953-net-patch-linux-kernel-to-support-shortcut-fe.patch
 # Patch firewall to enable SFE
 patch -p1 < ../PATCH/new/package/luci-app-firewall_add_sfe_switch.patch
 # SFE modules
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/shortcut-fe package/lean/shortcut-fe
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/fast-classifier package/lean/fast-classifier
+svn co https://github.com/immortalwrt/immortalwrt/trunk/package/kernel/shortcut-fe package/kernel/shortcut-fe
+svn co https://github.com/immortalwrt/immortalwrt/trunk/package/kernel/fast-classifier package/kernel/fast-classifier
 cp -f ../PATCH/duplicate/shortcut-fe ./package/base-files/files/etc/init.d
 
 ## Extra Packages
@@ -55,25 +51,21 @@ svn co https://github.com/immortalwrt/packages/trunk/utils/coremark feeds/packag
 # Autoreboot
 svn co https://github.com/immortalwrt/luci/branches/openwrt-21.02/applications/luci-app-autoreboot feeds/luci/applications/luci-app-autoreboot
 ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
-#svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-autoreboot package/lean/luci-app-autoreboot
 # Ram-free
 svn co https://github.com/immortalwrt/luci/branches/openwrt-21.02/applications/luci-app-ramfree feeds/luci/applications/luci-app-ramfree
 ln -sf ../../../feeds/luci/applications/luci-app-ramfree ./package/feeds/luci/luci-app-ramfree
-#svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-ramfree package/lean/luci-app-ramfree
 # SSRP
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # SSRP Dependies
-rm -rf ./feeds/packages/net/kcptun
 rm -rf ./feeds/packages/net/proxychains-ng
 rm -rf ./feeds/packages/net/shadowsocks-libev
 rm -rf ./feeds/packages/net/xray-core
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/dns2socks package/lean/dns2socks
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/microsocks package/lean/microsocks
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/pdnsd-alt package/lean/pdnsd
+svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/pdnsd-alt package/lean/pdnsd-alt
 svn co https://github.com/fw876/helloworld/trunk/tcping package/lean/tcping
 svn co https://github.com/fw876/helloworld/trunk/shadowsocksr-libev package/lean/shadowsocksr-libev
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/kcptun package/lean/kcptun
 svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naiveproxy
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/redsocks2 package/lean/redsocks2
 svn co https://github.com/coolsnowwolf/packages/trunk/net/shadowsocks-libev package/lean/shadowsocks-libev
@@ -85,14 +77,12 @@ svn co https://github.com/fw876/helloworld/trunk/v2ray-plugin package/lean/v2ray
 svn co https://github.com/fw876/helloworld/trunk/xray-plugin package/lean/xray-plugin
 svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-core
 #svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
-#svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/proxychains-ng package/lean/proxychains-ng
-#svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/srelay package/lean/srelay
 #svn co https://github.com/immortalwrt/packages/trunk/package/net/tcpping feeds/packages/net/tcpping
 #svn co https://github.com/fw876/helloworld/trunk/trojan-go package/lean/trojan-go
 #svn co https://github.com/fw876/helloworld/trunk/v2ray-core package/lean/v2ray-core
 # Merge Pull Requests from developers
 pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/509.patch | patch -p1
+wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/557.patch | patch -p1
 wget -qO - https://github.com/QiuSimons/helloworld-fw876/commit/c1674ad.patch | patch -p1
 popd
 # Add Extra Proxy Ports and Change Lists
