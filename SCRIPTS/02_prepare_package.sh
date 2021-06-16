@@ -4,6 +4,8 @@ clear
 ## Prepare
 # Update feeds
 ./scripts/feeds update -a && ./scripts/feeds install -a
+# Default Dropbear Interface
+echo -e "\toption Interface 'lan'" >> ./package/network/services/dropbear/files/dropbear.config
 # Irqbalance
 sed -i "s/enabled '0'/enabled '1'/g" feeds/packages/utils/irqbalance/files/irqbalance.config
 # Victoria's Secret
@@ -58,7 +60,6 @@ ln -sf ../../../feeds/luci/applications/luci-app-ramfree ./package/feeds/luci/lu
 svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
 rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # SSRP Dependies
-rm -rf ./feeds/packages/net/proxychains-ng
 rm -rf ./feeds/packages/net/shadowsocks-libev
 rm -rf ./feeds/packages/net/xray-core
 svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/dns2socks package/lean/dns2socks
@@ -82,7 +83,7 @@ svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-cor
 #svn co https://github.com/fw876/helloworld/trunk/v2ray-core package/lean/v2ray-core
 # Merge Pull Requests from developers
 pushd package/lean
-wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/557.patch | patch -p1
+#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/559.patch | patch -p1
 wget -qO - https://github.com/QiuSimons/helloworld-fw876/commit/c1674ad.patch | patch -p1
 popd
 # Add Extra Proxy Ports and Change Lists
