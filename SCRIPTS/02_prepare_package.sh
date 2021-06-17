@@ -4,8 +4,6 @@ clear
 ## Prepare
 # Update feeds
 ./scripts/feeds update -a && ./scripts/feeds install -a
-# Default Dropbear Interface
-echo -e "\toption Interface 'lan'" >> ./package/network/services/dropbear/files/dropbear.config
 # Irqbalance
 sed -i "s/enabled '0'/enabled '1'/g" feeds/packages/utils/irqbalance/files/irqbalance.config
 # Victoria's Secret

@@ -18,7 +18,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v21.02.0-rc1
+OpenWrt official v21.02.0-rc3
 
 [BingBing](https://weibo.com/u/6512991534) contains [SSRP](https://github.com/fw876/helloworld)
 

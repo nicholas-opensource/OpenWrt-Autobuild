@@ -10,4 +10,9 @@ wget https://downloads.openwrt.org/releases/${latest_version}/targets/x86/64/pac
 zgrep -m 1 "Depends: kernel (=.*)$" Packages.gz | sed -e 's/.*-\(.*\))/\1/' > .vermagic
 sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
 
+# Final Cleanup
+chmod -R 755 ./
+find ./ -name *.orig | xargs rm -f
+find ./ -name *.rej | xargs rm -f
+
 exit 0

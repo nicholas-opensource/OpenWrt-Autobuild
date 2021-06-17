@@ -7,7 +7,6 @@ cd openwrt
 cp -r ../SCRIPTS/. ./
 bash 02_prepare_package.sh
 bash 02_R2S.sh
-chmod -R 755 ./
 bash 03_convert_translation.sh
 bash 04_remove_upx.sh
 bash 05_create_acl_for_luci.sh -a

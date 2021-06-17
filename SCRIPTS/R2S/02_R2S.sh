@@ -77,4 +77,9 @@ CONFIG_CRYPTO_SM4_ARM64_CE=y
 # CONFIG_PCIE_AL is not set
 ' >> ./target/linux/rockchip/armv8/config-5.4
 
+# Final Cleanup
+chmod -R 755 ./
+find ./ -name *.orig | xargs rm -f
+find ./ -name *.rej | xargs rm -f
+
 exit 0

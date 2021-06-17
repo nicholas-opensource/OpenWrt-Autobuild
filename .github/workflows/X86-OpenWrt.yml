@@ -70,7 +70,6 @@ jobs:
         cp -r ../SCRIPTS/. ./
         /bin/bash 02_prepare_package.sh
         /bin/bash 02_X86.sh
-        chmod -R 755 ./
     - name: Convert Translation
       run: |
         cd openwrt
