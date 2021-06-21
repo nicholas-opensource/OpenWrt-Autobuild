@@ -99,6 +99,7 @@ CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Trojan=n
 CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_V2ray_plugin=n
 CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Xray=y
 CONFIG_PACKAGE_luci-theme-bootstrap=y
+CONFIG_PACKAGE_openssh-sftp-server=y
 CONFIG_PACKAGE_wget-ssl=y
 
 #OpenSSL
