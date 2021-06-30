@@ -62,6 +62,12 @@ uci commit dhcp
 
 ![](/Screenshots/main.jpg)
 
+---
+
+### Known Issues
+
+* Removed Shortcut-FE service, because it will cause nearly 40% udp packet loss. Now build-in kernel soft offloading, but it is closed by default. Turning on soft offloading will cause some user service errors, like Apple Push Notification Service (aka APNS). Decide for yourself whether to open soft offloading and you better understand netfilter, soft offloading, jitter, etc.  
+
 ## Thanks to all my friends in NanoPi R2S Club
 
 * Especially Thanks

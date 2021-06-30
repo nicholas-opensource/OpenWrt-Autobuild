@@ -33,14 +33,6 @@ wget -P package/network/config/firewall/patches/ https://github.com/immortalwrt/
 patch -p1 < ../PATCH/new/package/luci-app-firewall_add_fullcone.patch
 # FullCone modules
 cp -rf ../PATCH/duplicate/fullconenat ./package/network/fullconenat
-# SFE core patch
-wget -P target/linux/generic/hack-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.4/953-net-patch-linux-kernel-to-support-shortcut-fe.patch
-# Patch firewall to enable SFE
-patch -p1 < ../PATCH/new/package/luci-app-firewall_add_sfe_switch.patch
-# SFE modules
-svn co https://github.com/immortalwrt/immortalwrt/trunk/package/kernel/shortcut-fe package/kernel/shortcut-fe
-svn co https://github.com/immortalwrt/immortalwrt/trunk/package/kernel/fast-classifier package/kernel/fast-classifier
-cp -f ../PATCH/duplicate/shortcut-fe ./package/base-files/files/etc/init.d
 
 ## Extra Packages
 # AutoCore
@@ -82,7 +74,6 @@ svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-cor
 # Merge Pull Requests from developers
 pushd package/lean
 #wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/559.patch | patch -p1
-wget -qO - https://github.com/QiuSimons/helloworld-fw876/commit/c1674ad.patch | patch -p1
 popd
 # Add Extra Proxy Ports, Change Lists and Replace uclient-fetch with wget-ssl
 pushd package/lean/luci-app-ssr-plus
