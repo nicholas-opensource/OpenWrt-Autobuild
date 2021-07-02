@@ -46,7 +46,8 @@ uci set dhcp.lan.ra='hybrid'
 uci set dhcp.lan.ndp='hybrid'
 uci set dhcp.lan.dhcpv6='hybrid'
 uci set dhcp.lan.ra_management='1'
-uci del dhcp.@dnsmasq[0].rebind_protection='1'
+uci set dhcp.@dnsmasq[0].rebind_protection='0'
+uci del dhcp.@dnsmasq[0].filteraaaa
 uci commit dhcp
 ```
 #### R2S Feature
@@ -66,7 +67,7 @@ uci commit dhcp
 
 ### Known Issues
 
-* Removed Shortcut-FE service, because it will cause nearly 40% udp packet loss. Now build-in kernel soft offloading, but it is closed by default. Turning on soft offloading will cause some user service errors, like Apple Push Notification Service (aka APNS). Decide for yourself whether to open soft offloading and you better understand netfilter, soft offloading, jitter, etc.  
+* Removed Shortcut-FE service, because it will cause nearly 40% UDP packet loss. Now build-in kernel soft offloading, but it is disabled by default. Turning on soft offloading will cause some user service errors, like Apple Push Notification Service (aka APNS). Decide for yourself whether to open soft offloading and you better understand netfilter, soft offloading, jitter, etc.  
 
 ## Thanks to all my friends in NanoPi R2S Club
 
