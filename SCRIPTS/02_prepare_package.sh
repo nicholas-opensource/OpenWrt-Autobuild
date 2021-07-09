@@ -82,6 +82,8 @@ sed -i 's/uclient-fetch/wget-ssl/g' Makefile root/etc/init.d/shadowsocksr root/u
 sed -i 's,ispip.clang.cn/all_cn,cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute,' root/etc/init.d/shadowsocksr
 sed -i 's,YW5vbnltb3Vz/domain-list-community@release/gfwlist,Loyalsoldier/v2ray-rules-dat@release/gfw,' root/etc/init.d/shadowsocksr
 sed -i '/Clang.CN.CIDR/a\o:value("https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute.txt", translate("QiuSimons/Chnroute"))' luasrc/model/cbi/shadowsocksr/advanced.lua
+sed -i 's/443 -j RETURN/443 -j DROP/' root/usr/bin/ssr-rules
+sed -i 's/80 -j RETURN/80 -j DROP/' root/usr/bin/ssr-rules
 popd
 
 ## Ending
