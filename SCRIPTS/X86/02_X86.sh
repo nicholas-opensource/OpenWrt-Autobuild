@@ -10,6 +10,11 @@ wget https://downloads.openwrt.org/releases/${latest_version}/targets/x86/64/pac
 zgrep -m 1 "Depends: kernel (=.*)$" Packages.gz | sed -e 's/.*-\(.*\))/\1/' > .vermagic
 sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
 
+# Crypto
+echo '
+CONFIG_CRYPTO_AES_NI_INTEL=y
+' >> ./target/linux/x86/64/config-5.4
+
 # Final Cleanup
 chmod -R 755 ./
 find ./ -name *.orig | xargs rm -f

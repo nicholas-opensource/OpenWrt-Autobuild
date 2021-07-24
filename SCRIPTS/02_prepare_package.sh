@@ -16,8 +16,10 @@ echo "net.netfilter.nf_conntrack_helper=1" >> ./package/kernel/linux/files/sysct
 sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lang/node/Makefile
 
 ## Important Patches
+# OpenSSL
+wget -qO - https://github.com/mj22226/openwrt/commit/5e1063.patch | patch -p1
 # ARM64: Add CPU model name in proc cpuinfo
-wget -P target/linux/generic/pending-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.4/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
+wget -P target/linux/generic/hack-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.4/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # Patch jsonc
 patch -p1 < ../PATCH/new/package/use_json_object_new_int64.patch
 # Patch dnsmasq
@@ -82,8 +84,6 @@ sed -i 's/uclient-fetch/wget-ssl/g' Makefile root/etc/init.d/shadowsocksr root/u
 sed -i 's,ispip.clang.cn/all_cn,cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute,' root/etc/init.d/shadowsocksr
 sed -i 's,YW5vbnltb3Vz/domain-list-community@release/gfwlist,Loyalsoldier/v2ray-rules-dat@release/gfw,' root/etc/init.d/shadowsocksr
 sed -i '/Clang.CN.CIDR/a\o:value("https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute.txt", translate("QiuSimons/Chnroute"))' luasrc/model/cbi/shadowsocksr/advanced.lua
-sed -i 's/443 -j RETURN/443 -j DROP/' root/usr/bin/ssr-rules
-sed -i 's/80 -j RETURN/80 -j DROP/' root/usr/bin/ssr-rules
 popd
 
 ## Ending
