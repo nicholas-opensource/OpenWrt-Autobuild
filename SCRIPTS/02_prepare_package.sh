@@ -17,7 +17,7 @@ sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lan
 
 ## Important Patches
 # OpenSSL
-wget -qO - https://github.com/mj22226/openwrt/commit/5e1063.patch | patch -p1
+wget -qO - https://github.com/mj22226/openwrt/commit/5e10633.patch | patch -p1
 # ARM64: Add CPU model name in proc cpuinfo
 wget -P target/linux/generic/hack-5.4 https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.4/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # Patch jsonc

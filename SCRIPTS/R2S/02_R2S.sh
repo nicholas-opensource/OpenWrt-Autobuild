@@ -4,7 +4,7 @@ clear
 ## Custom-made
 # GCC CFlags for R2S
 sed -i 's/Os/O3/g' include/target.mk
-sed -i 's,-mcpu=generic,-march=armv8-a+crypto+crc -mabi=lp64,g' include/target.mk
+sed -i 's,-mcpu=generic,-mcpu=cortex-a53+crypto,g' include/target.mk
 # Mbedtls AES HW-Crypto
 cp -f ../PATCH/new/package/100-Implements-AES-and-GCM-with-ARMv8-Crypto-Extensions.patch ./package/libs/mbedtls/patches/100-Implements-AES-and-GCM-with-ARMv8-Crypto-Extensions.patch
 # DMC
