@@ -19,6 +19,7 @@ sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lan
 # BBR v2
 patch -p1 < ../PATCH/new/bbrv2/openwrt-kmod-bbr2.patch
 cp -f ../PATCH/new/bbrv2/693-Add_BBRv2_congestion_control_for_Linux_TCP.patch ./target/linux/generic/hack-5.4/693-Add_BBRv2_congestion_control_for_Linux_TCP.patch
+wget -qO - https://github.com/openwrt/openwrt/commit/cfaf039.patch | patch -p1
 # OpenSSL
 wget -qO - https://github.com/mj22226/openwrt/commit/5e10633.patch | patch -p1
 # ARM64: Add CPU model name in proc cpuinfo
