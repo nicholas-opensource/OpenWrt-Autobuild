@@ -51,13 +51,6 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         expire-in: 14d # Source:https://github.com/kolpav/purge-artifacts-action
-    - name: Cleanup Workflow Runs
-      uses: Mattraks/delete-workflow-runs@main
-      with:
-        token: ${{ github.token }}
-        repository: ${{ github.repository }}
-        retain_days: 21
-        #keep_minimum_runs: 6
     - name: Prepare Mixedwrt
       run: |
         sudo chown -R runner:runner /home/runner/work/OpenWrt-Autobuild
