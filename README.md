@@ -1,7 +1,7 @@
 
 ## Notice
 
-This repository is based on [QiuSimons/R2S-R4S-X86-OpenWrt](https://github.com/QiuSimons/R2S-R4S-X86-OpenWrt).  
+This repository is based on [QiuSimons/YAOF](https://github.com/QiuSimons/YAOF).  
 
 All source code in this repository uses [GNU GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.html).  
 If this repository violates your legal rights, please contact me.  
@@ -18,7 +18,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v21.02.0-rc3
+OpenWrt official v21.02.0-rc4
 
 [BingBing](https://weibo.com/u/6512991534) contains [SSRP](https://github.com/fw876/helloworld)
 
@@ -64,12 +64,7 @@ uci commit dhcp
 ![](/Screenshots/main.jpg)
 
 ---
-
-### Known Issues
-
-* Removed Shortcut-FE service, because it will cause nearly 40% UDP packet loss. Now build-in kernel soft offloading, but it is disabled by default. Turning on soft offloading will cause some user service errors, like Apple Push Notification Service (aka APNS). Decide for yourself whether to open soft offloading and you better understand netfilter, soft offloading, jitter, etc.  
-
-## Thanks to all my friends in NanoPi R2S Club
+## Thanks to everyone in ImmortalWrt and OpenWrt
 
 * Especially Thanks
   * [QiuSimons](https://github.com/QiuSimons)
