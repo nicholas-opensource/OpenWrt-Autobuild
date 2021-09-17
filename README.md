@@ -18,7 +18,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v21.02.0-rc4
+OpenWrt official v21.02.0
 
 [BingBing](https://weibo.com/u/6512991534) contains [SSRP](https://github.com/fw876/helloworld)
 
@@ -61,7 +61,7 @@ uci commit dhcp
 
 4.Support TF card with a minimum size of 512MB
 
-![](/Screenshots/main.jpg)
+![](/Screenshots/main.jpeg)
 
 ---
 ## Thanks to everyone in ImmortalWrt and OpenWrt

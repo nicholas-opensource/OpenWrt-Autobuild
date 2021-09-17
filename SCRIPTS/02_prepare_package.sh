@@ -6,6 +6,14 @@ clear
 ./scripts/feeds update -a && ./scripts/feeds install -a
 # Irqbalance
 sed -i "s/enabled '0'/enabled '1'/g" feeds/packages/utils/irqbalance/files/irqbalance.config
+# Disable Mitigations
+https://github.com/immortalwrt/immortalwrt/tree/master/target/linux/rockchip/image
+sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/mmc.bootscript
+sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/nanopi-r2s.bootscript
+sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/nanopi-r4s.bootscript
+sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-efi.cfg
+sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-iso.cfg
+sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-pc.cfg
 # Victoria's Secret
 rm -rf ./scripts/download.pl
 rm -rf ./include/download.mk
@@ -31,6 +39,7 @@ wget -P target/linux/generic/hack-5.4 https://github.com/immortalwrt/immortalwrt
 # Patch firewall to enable fullcone
 mkdir package/network/config/firewall/patches
 wget -P package/network/config/firewall/patches/ https://github.com/immortalwrt/immortalwrt/raw/master/package/network/config/firewall/patches/fullconenat.patch
+wget -qO- https://github.com/msylgj/R2S-R4S-OpenWrt/raw/21.02/PATCHES/001-fix-firewall-flock.patch | patch -p1
 # Patch LuCI to add fullcone button
 patch -p1 < ../PATCH/new/package/luci-app-firewall_add_fullcone.patch
 # FullCone modules
@@ -38,7 +47,7 @@ cp -rf ../PATCH/duplicate/fullconenat ./package/network/fullconenat
 
 ## Extra Packages
 # AutoCore
-svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/emortal/autocore package/emortal/autocore
+svn co https://github.com/immortalwrt/immortalwrt/branches/openwrt-21.02/package/emortal/autocore package/emortal/autocore
 curl -fsSL https://raw.githubusercontent.com/nicholas-opensource/Others/master/add-openwrt.patch | patch -p1
 rm -rf ./feeds/packages/utils/coremark
 svn co https://github.com/immortalwrt/packages/trunk/utils/coremark feeds/packages/utils/coremark
@@ -75,7 +84,7 @@ svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-cor
 #svn co https://github.com/fw876/helloworld/trunk/v2ray-core package/lean/v2ray-core
 # Merge Pull Requests from developers
 pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/559.patch | patch -p1
+#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/653.patch | patch -p1
 popd
 # Add Extra Proxy Ports, Change Lists and Replace uclient-fetch with wget-ssl
 pushd package/lean/luci-app-ssr-plus
