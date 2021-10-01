@@ -7,7 +7,6 @@ clear
 # Irqbalance
 sed -i "s/enabled '0'/enabled '1'/g" feeds/packages/utils/irqbalance/files/irqbalance.config
 # Disable Mitigations
-https://github.com/immortalwrt/immortalwrt/tree/master/target/linux/rockchip/image
 sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/mmc.bootscript
 sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/nanopi-r2s.bootscript
 sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/nanopi-r4s.bootscript
@@ -84,7 +83,7 @@ svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-cor
 #svn co https://github.com/fw876/helloworld/trunk/v2ray-core package/lean/v2ray-core
 # Merge Pull Requests from developers
 pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/653.patch | patch -p1
+#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/678.patch | patch -p1
 popd
 # Add Extra Proxy Ports, Change Lists and Replace uclient-fetch with wget-ssl
 pushd package/lean/luci-app-ssr-plus
