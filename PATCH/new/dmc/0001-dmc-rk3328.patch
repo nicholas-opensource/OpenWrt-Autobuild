@@ -1,15 +1,15 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 This is free software, licensed under the GNU General Public License v3
 From: Immortalwrt <https://immortalwrt.org>
-Repatch From: Nicholas Sun <OpenWrt-Autobuild@noreply.github.com>
-Date: Sun, 16 Jun 2021 17:22:37 +1100
+Repatch From: Nicholas Sun <44309749+nicholas-opensource@users.noreply.github.com>
+Date: Sun, 23 Oct 2021 23:53:07 +1100
 Subject: [PATCH] DMC for Nanopi R2S
 
 ---
  .../boot/arm-trusted-firmware-rk3328/Makefile |  55 ++
  .../arm-trusted-firmware-rk3328/src/trust.ini |  15 +
  package/boot/uboot-rockchip/Makefile          |  14 +-
- .../rockchip/rk3328-dram-nanopi2-timing.dtsi  | 311 +++++++
+ .../rockchip/rk3328-dram-default-timing.dtsi  | 311 +++++++
  .../files/drivers/devfreq/rk3328_dmc.c        | 852 ++++++++++++++++++
  .../include/dt-bindings/clock/rockchip-ddr.h  |  63 ++
  .../include/dt-bindings/memory/rk3328-dram.h  | 159 ++++
@@ -18,7 +18,7 @@ Subject: [PATCH] DMC for Nanopi R2S
  9 files changed, 1481 insertions(+), 4 deletions(-)
  create mode 100644 package/boot/arm-trusted-firmware-rk3328/Makefile
  create mode 100644 package/boot/arm-trusted-firmware-rk3328/src/trust.ini
- create mode 100644 target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3328-dram-nanopi2-timing.dtsi
+ create mode 100644 target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3328-dram-default-timing.dtsi
  create mode 100644 target/linux/rockchip/files/drivers/devfreq/rk3328_dmc.c
  create mode 100644 target/linux/rockchip/files/include/dt-bindings/clock/rockchip-ddr.h
  create mode 100644 target/linux/rockchip/files/include/dt-bindings/memory/rk3328-dram.h
@@ -140,11 +140,11 @@ index 393e8c3..177b36d 100644
  endef
  
  define Package/u-boot/install/default
-diff --git a/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3328-dram-nanopi2-timing.dtsi b/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3328-dram-nanopi2-timing.dtsi
+diff --git a/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3328-dram-default-timing.dtsi b/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3328-dram-default-timing.dtsi
 new file mode 100644
 index 0000000..a3f5ff4
 --- /dev/null
-+++ b/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3328-dram-nanopi2-timing.dtsi
++++ b/target/linux/rockchip/files/arch/arm64/boot/dts/rockchip/rk3328-dram-default-timing.dtsi
 @@ -0,0 +1,311 @@
 +/*
 + * Copyright (c) 2017 Fuzhou Rockchip Electronics Co., Ltd
