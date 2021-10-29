@@ -27,8 +27,6 @@ sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lan
 wget -P package/libs/openssl/patches/ https://github.com/openssl/openssl/pull/11895.patch
 wget -P package/libs/openssl/patches/ https://github.com/openssl/openssl/pull/14578.patch
 wget -P package/libs/openssl/patches/ https://github.com/openssl/openssl/pull/16575.patch
-# Temporary patch to fix broken squashfs sysupgrade until v21.02.1 is released
-wget -qO - https://github.com/openwrt/openwrt/commit/5c904bc.patch | patch -p1
 # ARM64: Add CPU model name in proc cpuinfo
 wget -P target/linux/generic/hack-5.4/ https://github.com/immortalwrt/immortalwrt/raw/openwrt-21.02/target/linux/generic/hack-5.4/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # Patch jsonc

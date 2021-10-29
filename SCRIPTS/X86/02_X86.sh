@@ -6,7 +6,7 @@ cp -rf ../PATCH/duplicate/addition-trans-zh-x86 ./package/lean/lean-translate
 
 # Match Vermagic
 latest_release="$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | grep -Eo "v21.02.+[0-9\.]" | head -n 1)"
-wget https://downloads.openwrt.org/releases/${latest_version}/targets/x86/64/packages/Packages.gz
+wget https://downloads.openwrt.org/releases/${latest_release}/targets/x86/64/packages/Packages.gz
 zgrep -m 1 "Depends: kernel (=.*)$" Packages.gz | sed -e 's/.*-\(.*\))/\1/' > .vermagic
 sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
 
