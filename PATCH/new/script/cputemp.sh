@@ -17,6 +17,6 @@ echo "SOC Temp: "
 soc_temp=$(cat /sys/class/thermal/thermal_zone0/temp)
 awk 'BEGIN{printf "%.1f °C\n",('$soc_temp'/1000)}'
 
-sleep 2
+sleep 1
 
 done
