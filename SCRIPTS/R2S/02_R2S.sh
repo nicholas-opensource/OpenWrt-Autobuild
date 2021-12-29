@@ -33,6 +33,7 @@ sed -i "s/+1/1/g" target/linux/rockchip/armv8/base-files/etc/board.d/02_network
 # IRQ and disabed rk3328 ethernet tcp/udp offloading tx/rx
 sed -i '/set_interface_core 4 "eth1"/a\\tset_interface_core 1 "ff150000.i2c"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
 sed -i '/ff150000.i2c/a\\tset_interface_core 8 "ff160000.i2c"' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
+mkdir -p ./target/linux/rockchip/armv8/base-files/etc/hotplug.d/iface/
 cp -f ../PATCH/new/main/12-disable-rk3328-eth-offloading ./target/linux/rockchip/armv8/base-files/etc/hotplug.d/iface/12-disable-rk3328-eth-offloading
 # Update r8152 driver
 svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/kernel/r8152 package/new/r8152
