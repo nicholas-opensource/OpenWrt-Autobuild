@@ -8,6 +8,8 @@ CONFIG_KERNEL_BUILD_USER="nicholas-sun"
 # CONFIG_COLLECT_KERNEL_DEBUG is not set
 
 #Basic Components
+CONFIG_BUSYBOX_CUSTOM=y
+CONFIG_BUSYBOX_CONFIG_FEATURE_SYSLOG_INFO=y
 CONFIG_PACKAGE_addition-trans-zh=y
 CONFIG_PACKAGE_arm-trusted-firmware-rockchip=y
 CONFIG_PACKAGE_autocore-arm=y

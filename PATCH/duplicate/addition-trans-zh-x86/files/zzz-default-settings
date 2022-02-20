@@ -56,8 +56,10 @@ uci set shadowsocksr.@global[0].chnroute_url='https://cdn.jsdelivr.net/gh/QiuSim
 uci commit shadowsocksr
 
 #Others
-ln -sf /sbin/ip /usr/bin/ip
-ln -sf /usr/bin/wget /usr/bin/wget-ssl
+[ ! -f '/usr/bin/ip' ] && [ -f '/sbin/ip' ] && ln -sf /sbin/ip /usr/bin/ip
+[ ! -f '/usr/bin/wget-ssl' ] && [ -f '/usr/bin/wget' ] && ln -sf /usr/bin/wget /usr/bin/wget-ssl
+[ ! -f '/usr/bin/ss-local' ] && [ -f '/usr/bin/sslocal' ] && ln -sf /usr/bin/sslocal /usr/bin/ss-local
+[ ! -f '/usr/bin/v2ray' ] && [ -f '/usr/bin/xray' ] && ln -sf /usr/bin/xray /usr/bin/v2ray
 opkg flag hold luci-app-firewall
 opkg flag hold firewall
 opkg flag hold dnsmasq-full

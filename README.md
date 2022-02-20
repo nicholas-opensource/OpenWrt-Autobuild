@@ -18,7 +18,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v21.02.1
+OpenWrt official v21.02.2
 
 [BingBing](https://weibo.com/u/6512991534) contains [SSRP](https://github.com/fw876/helloworld)
 
@@ -75,3 +75,4 @@ uci commit dhcp
   * [RikudouPatrickstar](https://github.com/RikudouPatrickstar)
   * [KaneGreen](https://github.com/KaneGreen)
   * [msylgj](https://github.com/msylgj)
+  * [coolsnowwolf](https://github.com/coolsnowwolf)
