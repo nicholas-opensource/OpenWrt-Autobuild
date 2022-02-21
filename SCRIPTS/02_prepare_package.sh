@@ -65,18 +65,18 @@ rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
 # SSRP Dependies
 rm -rf ./feeds/packages/net/shadowsocks-libev
 rm -rf ./feeds/packages/net/xray-core
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/dns2socks package/lean/dns2socks
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/microsocks package/lean/microsocks
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/pdnsd-alt package/lean/pdnsd-alt
+svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/dns2socks package/lean/dns2socks
+svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/microsocks package/lean/microsocks
+svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/pdnsd-alt package/lean/pdnsd-alt
 svn co https://github.com/fw876/helloworld/trunk/tcping package/lean/tcping
 svn co https://github.com/fw876/helloworld/trunk/shadowsocksr-libev package/lean/shadowsocksr-libev
 svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naiveproxy
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/redsocks2 package/lean/redsocks2
-svn co https://github.com/coolsnowwolf/packages/trunk/net/shadowsocks-libev package/lean/shadowsocks-libev
+svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/redsocks2 package/lean/redsocks2
+svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/shadowsocks-libev package/lean/shadowsocks-libev
 svn co https://github.com/fw876/helloworld/trunk/shadowsocks-rust package/lean/shadowsocks-rust
 svn co https://github.com/fw876/helloworld/trunk/simple-obfs package/lean/simple-obfs
 svn co https://github.com/fw876/helloworld/trunk/trojan package/lean/trojan
-svn co https://github.com/coolsnowwolf/lede/trunk/package/lean/ipt2socks package/lean/ipt2socks
+svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/ipt2socks package/lean/ipt2socks
 svn co https://github.com/fw876/helloworld/trunk/v2ray-plugin package/lean/v2ray-plugin
 svn co https://github.com/fw876/helloworld/trunk/xray-plugin package/lean/xray-plugin
 svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-core

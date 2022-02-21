@@ -4,6 +4,9 @@ msgstr "处理器"
 msgid "Architecture"
 msgstr "架构"
 
+msgid "Target Platform"
+msgstr "目标平台"
+
 msgid "CPU Temperature"
 msgstr "CPU 温度"
 
