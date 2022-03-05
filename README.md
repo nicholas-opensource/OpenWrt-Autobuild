@@ -20,10 +20,6 @@ Password：None
 
 OpenWrt official v21.02.2
 
-[BingBing](https://weibo.com/u/6512991534) contains [SSRP](https://github.com/fw876/helloworld)
-
-[Anne Hathaway](https://www.instagram.com/annehathaway/) means "No Services"
-
 ---
 ### Feature
 
@@ -54,8 +50,7 @@ uci commit dhcp
 
 1.Fixed DDR4 333MHz problem
 
-2.Replaced [Shadowsocks-libev](https://github.com/shadowsocks/shadowsocks-libev) with [Shadowsocks-rust](https://github.com/shadowsocks/shadowsocks-rust) for the excellent performance.
-  * If your Shadowsocks are running with a non-AEAD encrypt method, please convert into Xray-core to run Shadowsocks or a terrible speed of fewer than 1 Mbps. And it's strongly recommended that you abandon outdated encrypt methods
+2.Modify DTSI to support overclocked unstable devices as much as possible
 
 3.Remove frequencies below 800MHz (same voltage) for faster response
 

@@ -59,52 +59,6 @@ ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci
 # Ram-free
 svn co https://github.com/immortalwrt/luci/branches/openwrt-21.02/applications/luci-app-ramfree feeds/luci/applications/luci-app-ramfree
 ln -sf ../../../feeds/luci/applications/luci-app-ramfree ./package/feeds/luci/luci-app-ramfree
-# SSRP
-svn co https://github.com/fw876/helloworld/trunk/luci-app-ssr-plus package/lean/luci-app-ssr-plus
-rm -rf ./package/lean/luci-app-ssr-plus/po/zh_Hans
-# SSRP Dependies
-rm -rf ./feeds/packages/net/shadowsocks-libev
-rm -rf ./feeds/packages/net/xray-core
-svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/dns2socks package/lean/dns2socks
-svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/microsocks package/lean/microsocks
-svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/pdnsd-alt package/lean/pdnsd-alt
-svn co https://github.com/fw876/helloworld/trunk/tcping package/lean/tcping
-svn co https://github.com/fw876/helloworld/trunk/shadowsocksr-libev package/lean/shadowsocksr-libev
-svn co https://github.com/fw876/helloworld/trunk/naiveproxy package/lean/naiveproxy
-svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/redsocks2 package/lean/redsocks2
-svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/shadowsocks-libev package/lean/shadowsocks-libev
-svn co https://github.com/fw876/helloworld/trunk/shadowsocks-rust package/lean/shadowsocks-rust
-svn co https://github.com/fw876/helloworld/trunk/simple-obfs package/lean/simple-obfs
-svn co https://github.com/fw876/helloworld/trunk/trojan package/lean/trojan
-svn co https://github.com/immortalwrt/packages/branches/openwrt-21.02/net/ipt2socks package/lean/ipt2socks
-svn co https://github.com/fw876/helloworld/trunk/v2ray-plugin package/lean/v2ray-plugin
-svn co https://github.com/fw876/helloworld/trunk/xray-plugin package/lean/xray-plugin
-svn co https://github.com/fw876/helloworld/trunk/xray-core package/lean/xray-core
-#svn co https://github.com/fw876/helloworld/trunk/ipt2socks-alt package/lean/ipt2socks-alt
-#svn co https://github.com/immortalwrt/packages/trunk/package/net/tcpping feeds/packages/net/tcpping
-#svn co https://github.com/fw876/helloworld/trunk/trojan-go package/lean/trojan-go
-#svn co https://github.com/fw876/helloworld/trunk/v2ray-core package/lean/v2ray-core
-# Merge Pull Requests from developers
-pushd package/lean
-#wget -qO - https://patch-diff.githubusercontent.com/raw/fw876/helloworld/pull/691.patch | patch -p1
-popd
-# Add Extra Proxy Ports, Change Lists and Deny HappyCast Ads
-pushd package/lean/luci-app-ssr-plus
-sed -i 's/143/143,25,5222/' root/etc/init.d/shadowsocksr
-sed -i 's,ispip.clang.cn/all_cn,cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute,' root/etc/init.d/shadowsocksr
-sed -i 's,YW5vbnltb3Vz/domain-list-community@release/gfwlist,Loyalsoldier/v2ray-rules-dat@release/gfw,' root/etc/init.d/shadowsocksr
-sed -i '/Clang.CN.CIDR/a\o:value("https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute@master/dist/chnroute/chnroute.txt", translate("QiuSimons/Chnroute"))' luasrc/model/cbi/shadowsocksr/advanced.lua
-echo '
-sdkauth.hpplay.cn
-adeng.hpplay.cn
-ad.hpplay.cn
-conf.hpplay.cn
-fix.hpplay.cn
-adcdn.hpplay.cn
-sl.hpplay.cn
-rp.hpplay.cn
-' >> root/etc/ssrplus/deny.list
-popd
 
 ## Ending
 # Lets Fuck
