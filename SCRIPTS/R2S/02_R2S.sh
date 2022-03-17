@@ -28,6 +28,7 @@ cp -f ../PATCH/new/main/998-rockchip-enable-i2c0-on-NanoPi-R2S.patch ./target/li
 #wget -P target/linux/rockchip/armv8/base-files/usr/bin https://github.com/friendlyarm/friendlywrt/raw/master-v19.07.1/target/linux/rockchip-rk3328/base-files/usr/bin/start-rk3328-pwm-fan.sh
 # Swap LAN & WAN
 #patch -p1 < ../PATCH/new/custom/0003-target-rockchip-swap-nanopi-r2s-lan-wan-port.patch
+#sed -i 's,eth0,eth1,g' target/linux/rockchip/armv8/base-files/etc/hotplug.d/iface/12-disable-rk3328-eth-offloading
 # Temporary fix WAN mac
 sed -i "s/+1/1/g" target/linux/rockchip/armv8/base-files/etc/board.d/02_network
 # IRQ and disabed rk3328 ethernet tcp/udp offloading tx/rx
@@ -36,7 +37,7 @@ sed -i '/ff150000.i2c/a\\tset_interface_core 8 "ff160000.i2c"' target/linux/rock
 mkdir -p ./target/linux/rockchip/armv8/base-files/etc/hotplug.d/iface/
 cp -f ../PATCH/new/main/12-disable-rk3328-eth-offloading ./target/linux/rockchip/armv8/base-files/etc/hotplug.d/iface/12-disable-rk3328-eth-offloading
 # Update r8152 driver
-svn co https://github.com/immortalwrt/immortalwrt/branches/master/package/kernel/r8152 package/new/r8152
+svn export https://github.com/immortalwrt/immortalwrt/branches/master/package/kernel/r8152 package/new/r8152
 sed -i 's,kmod-usb-net-rtl8152,kmod-usb-net-rtl8152-vendor,g' target/linux/rockchip/image/armv8.mk
 # Addition-Trans-zh-master
 cp -rf ../PATCH/duplicate/addition-trans-zh-r2s ./package/lean/lean-translate

@@ -56,7 +56,7 @@ uci commit dhcp
 
 4.Support TF card with a minimum size of 512MB
 
-![](/Screenshots/main.jpeg)
+![](/Screenshots/main.jpg)
 
 ---
 ## Thanks to everyone in ImmortalWrt and OpenWrt
