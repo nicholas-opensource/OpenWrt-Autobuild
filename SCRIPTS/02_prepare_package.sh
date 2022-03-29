@@ -50,7 +50,7 @@ cp -rf ../PATCH/duplicate/fullconenat ./package/network/fullconenat
 
 ## Extra Packages
 # AutoCore
-svn export https://github.com/immortalwrt/immortalwrt/branches/openwrt-21.02/package/emortal/autocore package/emortal/autocore
+cp -rf ../PATCH/duplicate/autocore ./package/utils/autocore
 rm -rf ./feeds/packages/utils/coremark
 svn export https://github.com/immortalwrt/packages/trunk/utils/coremark feeds/packages/utils/coremark
 # Autoreboot
