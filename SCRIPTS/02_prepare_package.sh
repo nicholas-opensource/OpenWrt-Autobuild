@@ -31,8 +31,6 @@ wget -P package/libs/openssl/patches/ https://github.com/openssl/openssl/pull/16
 wget -qO - https://github.com/openwrt/openwrt/pull/4849.patch | patch -p1
 # ARM64: Add CPU model name in proc cpuinfo
 wget -P target/linux/generic/hack-5.4/ https://github.com/immortalwrt/immortalwrt/raw/openwrt-21.02/target/linux/generic/hack-5.4/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
-# Patch jsonc
-patch -p1 < ../PATCH/new/package/use_json_object_new_int64.patch
 # Patch dnsmasq
 patch -p1 < ../PATCH/new/package/dnsmasq-add-filter-aaaa-option.patch
 patch -p1 < ../PATCH/new/package/luci-add-filter-aaaa-option.patch
