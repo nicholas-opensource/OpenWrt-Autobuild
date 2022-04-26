@@ -40,7 +40,7 @@ cp -f ../PATCH/new/main/12-disable-rk3328-eth-offloading ./target/linux/rockchip
 svn export https://github.com/immortalwrt/immortalwrt/branches/master/package/kernel/r8152 package/new/r8152
 sed -i 's,kmod-usb-net-rtl8152,kmod-usb-net-rtl8152-vendor,g' target/linux/rockchip/image/armv8.mk
 # Addition-Trans-zh-master
-cp -rf ../PATCH/duplicate/addition-trans-zh-r2s ./package/lean/lean-translate
+cp -rf ../PATCH/duplicate/addition-trans-zh-r2s ./package/utils/addition-trans-zh
 # Add cputemp.sh
 cp -rf ../PATCH/new/script/cputemp.sh ./package/base-files/files/bin/cputemp.sh
 
