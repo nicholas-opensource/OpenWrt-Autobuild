@@ -2,7 +2,7 @@
 clear
 
 # Addition-Trans-zh-master
-cp -rf ../PATCH/duplicate/addition-trans-zh-x86 ./package/lean/lean-translate
+cp -rf ../PATCH/duplicate/addition-trans-zh-x86 ./package/utils/addition-trans-zh
 
 # Match Vermagic
 latest_release="$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | grep -Eo "21.02.+[0-9\.]" | head -n 1)"
