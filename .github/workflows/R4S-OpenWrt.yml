@@ -1,21 +1,21 @@
-name: X86-OpenWrt
+name: R4S-OpenWrt
 
 on:
   push:
     branches: 
       - main
     paths:
-      - '.github/workflows/X86-OpenWrt.yml'
-      - 'SEED/X86/config.seed'
+      - '.github/workflows/R4S-OpenWrt.yml'
+      - 'SEED/R4S/config.seed'
       - 'SCRIPTS/switch'
-#  watch:
-#    types: [started]
+ # watch:
+ #   types: [started]
 
 jobs:
   build:
     runs-on: ubuntu-20.04
     if: github.event.repository.owner.id == github.event.sender.id
-    
+
     steps:
     - name: Clone Repository
       uses: actions/checkout@main
@@ -48,7 +48,7 @@ jobs:
     - name: Prepare Mixedwrt
       run: |
         sudo chown -R runner:runner /home/runner/work/OpenWrt-Autobuild
-        cp -r ./SCRIPTS/X86/. ./SCRIPTS/
+        cp -r ./SCRIPTS/R4S/. ./SCRIPTS/
         cp -r ./SCRIPTS/. ./
         /bin/bash 01_get_ready.sh
     - name: Prepare Package
@@ -56,7 +56,7 @@ jobs:
         cd openwrt
         cp -r ../SCRIPTS/. ./
         /bin/bash 02_prepare_package.sh
-        /bin/bash 02_X86.sh
+        /bin/bash 02_R4S.sh
     - name: Convert Translation
       run: |
         cd openwrt
@@ -72,7 +72,7 @@ jobs:
     - name: Make Config
       run: |
         cd openwrt
-        mv ../SEED/X86/config.seed .config
+        mv ../SEED/R4S/config.seed .config
         make defconfig
     - name: Smart chmod
       run: |
@@ -99,12 +99,12 @@ jobs:
         make -j${make_process} V=m || make -j1 V=s
     - name: Cleaning
       run: |
-        cd openwrt/bin/targets/x86/64
+        cd openwrt/bin/targets/rockchip/armv8
         /bin/bash ../../../../../SCRIPTS/06_cleaning.sh
     - name: Print Disk Space After
       run: df -h
     - name: Upload Firmwares
       uses: actions/upload-artifact@main
       with:
-        name: X86-OpenWrt
-        path: openwrt/bin/targets/x86/64/
+        name: R2S-OpenWrt
+        path: openwrt/bin/targets/rockchip/armv8/

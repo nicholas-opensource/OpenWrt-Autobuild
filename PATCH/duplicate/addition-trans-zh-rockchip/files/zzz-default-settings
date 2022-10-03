@@ -43,6 +43,14 @@ uci set firewall.@defaults[0].fullcone='1'
 uci set firewall.@defaults[0].flow_offloading='1'
 uci commit firewall
 
+#SSL
+sed -i 's,#devcrypto,devcrypto,g' /etc/ssl/openssl.cnf
+sed -i 's,#USE_SOFTDRIVERS = 2,USE_SOFTDRIVERS = 1,g' /etc/ssl/openssl.cnf
+
+#Dropbear
+uci set dropbear.@dropbear[0].Interface='lan'
+uci commit dropbear
+
 #dnsmasq
 sed -i '/log-facility/d' /etc/dnsmasq.conf
 echo "log-facility=/dev/null" >> /etc/dnsmasq.conf

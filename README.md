@@ -18,7 +18,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v21.02.3
+OpenWrt official v22.03.0
 
 ---
 ### Feature
