@@ -1,4 +1,5 @@
 
+## v21.02 EOL
 ## Notice
 
 This repository is based on [QiuSimons/YAOF](https://github.com/QiuSimons/YAOF).  
@@ -18,7 +19,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v21.02.3
+OpenWrt official v21.02
 
 ---
 ### Feature

@@ -4,14 +4,13 @@
 uci set luci.main.lang='en'
 uci commit luci
 
-#Timezone UTC+8
-uci set system.@system[0].timezone=CST-8
-uci set system.@system[0].zonename=Asia/Shanghai
-uci commit system
 #Timezone UTC+10/+11
-#uci set system.@system[0].zonename=Australia/Melbourne
-#uci set system.@system[0].timezone=AEST-10AEDT,M10.1.0,M4.1.0/3
-#uci commit system
+uci set system.@system[0].zonename=Australia/Melbourne
+uci set system.@system[0].timezone=AEST-10AEDT,M10.1.0,M4.1.0/3
+uci commit system
+
+#Feeds
+#sed -i 's,downloads.openwrt.org,mirror.sjtu.edu.cn/openwrt,g' /etc/opkg/distfeeds.conf
 
 #uhttpd
 uci set uhttpd.main.rfc1918_filter=0
@@ -50,7 +49,6 @@ echo "log-facility=/dev/null" >> /etc/dnsmasq.conf
 #Others
 [ ! -f '/usr/bin/ip' ] && [ -f '/sbin/ip' ] && ln -sf /sbin/ip /usr/bin/ip
 [ ! -f '/usr/bin/wget-ssl' ] && [ -f '/usr/bin/wget' ] && ln -sf /usr/bin/wget /usr/bin/wget-ssl
-opkg flag hold luci-app-firewall
 opkg flag hold firewall
 opkg flag hold dnsmasq-full
 #sync; echo 3 > /proc/sys/vm/drop_caches
