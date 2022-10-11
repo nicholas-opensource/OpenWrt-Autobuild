@@ -107,8 +107,6 @@ ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci
 git clone -b mine --depth 1 https://git.openwrt.org/openwrt/staging/ldir.git
 rm -rf ./package/network/services/dnsmasq
 cp -rf ./ldir/package/network/services/dnsmasq ./package/network/services/
-# Luci-app-irqbalance by QiuSimons
-svn export https://github.com/QiuSimons/OpenWrt-Add/trunk/luci-app-irqbalance package/new/luci-app-irqbalance
 # MiniUPNP
 rm -rf ./feeds/packages/net/miniupnpd
 svn export https://github.com/openwrt/packages/trunk/net/miniupnpd feeds/packages/net/miniupnpd
