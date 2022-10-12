@@ -18,7 +18,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v22.03.0
+OpenWrt official v22.03.1
 
 ---
 ### Feature
@@ -48,7 +48,7 @@ uci commit dhcp
 ```
 #### R2S Feature
 
-1.Fixed DDR4 333MHz problem
+1.Fix DDR4 333MHz problem
 
 2.Modify DTSI to support overclocked unstable devices as much as possible
 
@@ -56,7 +56,15 @@ uci commit dhcp
 
 4.Support TF card with a minimum size of 512MB
 
-![](/Screenshots/main.jpg)
+![](/Screenshots/main.jpeg)
+
+#### R4S Feature
+
+1.Overclock to 2208MHz/1800MHz (big.LITTLE)
+
+2.Remove thermal throttle limit (Default at 70°C)
+
+3.Support TF card in 1.8V signalling, fix UHS card cannot boot in 3.3V mode
 
 ---
 ## Thanks to everyone in ImmortalWrt and OpenWrt
