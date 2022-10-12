@@ -1,8 +1,9 @@
 #!/bin/bash
 clear
 
-# Addition-Trans-zh-master
+# Addition-Trans-zh-master and fix APNS
 cp -rf ../PATCH/duplicate/addition-trans-zh-x86 ./package/utils/addition-trans-zh
+cp -rf ../PATCH/duplicate/files ./files
 
 # Match Vermagic
 latest_release="$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | grep -Eo "22.03.+[0-9\.]" | head -n 1)"

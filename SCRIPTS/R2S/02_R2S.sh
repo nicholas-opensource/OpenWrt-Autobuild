@@ -19,7 +19,7 @@ cp -f ../PATCH/overclock/999-rk3328-enable-1512mhz-and-minimum-at-816mhz.patch .
 cp -rf ../PATCH/duplicate/addition-trans-zh-rockchip ./package/utils/addition-trans-zh
 # Add cputemp.sh and fix Apple iOS apns
 cp -rf ../PATCH/script/cputemp.sh ./package/base-files/files/bin/cputemp
-cp -rf ../PATCH/files ./package/base-files/files
+cp -rf ../PATCH/duplicate/files ./files
 
 # Match Vermagic
 latest_release="$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | grep -Eo "22.03.+[0-9\.]" | head -n 1)"
