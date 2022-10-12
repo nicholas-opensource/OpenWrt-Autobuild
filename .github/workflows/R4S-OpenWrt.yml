@@ -40,11 +40,6 @@ jobs:
         sudo -E apt-get -qq clean
         sudo -E git config --global user.name 'GitHub Actions' && git config --global user.email 'noreply@github.com'
         df -h
-    - name: Cleanup Old Action Artifacts
-      uses: kolpav/purge-artifacts-action@master
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        expire-in: 14d # Source:https://github.com/kolpav/purge-artifacts-action
     - name: Prepare Mixedwrt
       run: |
         sudo chown -R runner:runner /home/runner/work/OpenWrt-Autobuild
@@ -106,5 +101,5 @@ jobs:
     - name: Upload Firmwares
       uses: actions/upload-artifact@main
       with:
-        name: R2S-OpenWrt
+        name: R4S-OpenWrt
         path: openwrt/bin/targets/rockchip/armv8/
