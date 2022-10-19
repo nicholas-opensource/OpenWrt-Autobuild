@@ -18,7 +18,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        days: 7
+        days: 14
         max-artifacts-to-delete: 50
         dry-run: no
     - name: Cleanup Workflow Logs
