@@ -18,7 +18,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v22.03.1
+OpenWrt official v22.03.2
 
 ---
 ### Feature
@@ -27,13 +27,17 @@ OpenWrt official v22.03.1
 
 2.Only contain the most basic software for the stability
 
-3.Fullcone NAT supported
+3.Fullcone NAT supported ( `fullcone-nat` and `fullcone-nat6`, although I think nat6 is stupid )
 
 4.Opkg vermagic matched with OpenWrt manifest ( You can install the software as if you have AppStore~ )
 
-5.Port some old software for the LuCI master by [msylgj](https://github.com/msylgj)
+5.Port some old software for the LuCI JavaScript and fix the `luci-app-upnp` by [msylgj](https://github.com/msylgj)
 
-6.Disable IPv6 by default
+6.Backport [MG-LRU](https://www.phoronix.com/news/MGLRU-Performance-OpenWRT) to OpenWrt k5.10
+
+7.Add support for phone USB hotspot sharing, both for Android and iPhone
+
+8.Disable IPv6 by default
 
   * If you do need IPv6
 
@@ -46,6 +50,16 @@ uci set dhcp.@dnsmasq[0].rebind_protection='0'
 uci del dhcp.@dnsmasq[0].filteraaaa
 uci commit dhcp
 ```
+
+#### X86_64 Feature
+
+1.Support more NICs by default: 
+```
+Intel: e1000, e1000e, ixgbe, igb, igc, i40e
+Broadcom: tg3
+Realtek: r8125, r8169
+```
+
 #### R2S Feature
 
 1.Fix DDR4 333MHz problem
