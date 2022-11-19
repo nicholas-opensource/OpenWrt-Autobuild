@@ -122,11 +122,12 @@ pushd feeds/luci
 wget -qO- https://github.com/openwrt/luci/commit/0b5fb915.patch | patch -p1
 popd
 # NIC drivers update
+svn export https://github.com/coolsnowwolf/lede/trunk/package/lean/r8125 package/new/r8125
+svn export https://github.com/immortalwrt/immortalwrt/branches/master/package/kernel/r8152 package/new/r8152
 git clone -b master --depth 1 https://github.com/BROBIRD/openwrt-r8168.git package/new/r8168
 patch -p1 <../PATCH/r8168/r8168-fix_LAN_led-for_r4s-from_TL.patch
-svn export https://github.com/immortalwrt/immortalwrt/branches/master/package/kernel/r8152 package/new/r8152
-svn export https://github.com/coolsnowwolf/lede/trunk/package/lean/r8125 package/new/r8125
 svn export https://github.com/coolsnowwolf/lede/trunk/package/lean/igb-intel package/new/igb-intel
+cp -rf ../PATCH/backport/igc ./target/linux/x86/files-5.10
 # Ram-free
 svn export https://github.com/immortalwrt/luci/trunk/applications/luci-app-ramfree feeds/luci/applications/luci-app-ramfree
 ln -sf ../../../feeds/luci/applications/luci-app-ramfree ./package/feeds/luci/luci-app-ramfree
