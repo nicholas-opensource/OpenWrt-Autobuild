@@ -1,8 +1,13 @@
 #!/bin/bash
 clear
 
-# GCC CFlags for x86
+# GCC CFlags for x86 and Kernel Settings
 sed -i 's/O3 -Wl,--gc-sections/O2 -Wl,--gc-sections -mtune=goldmont-plus/g' include/target.mk
+rm -rf ./package/kernel/linux/modules/video.mk
+rm -rf ./target/linux/x86/64/config-5.10
+wget -P package/kernel/linux/modules/ https://github.com/coolsnowwolf/lede/raw/master/package/kernel/linux/modules/video.mk
+sed -i 's,CONFIG_DRM_I915_CAPTURE_ERROR ,CONFIG_DRM_I915_CAPTURE_ERROR=n ,g' package/kernel/linux/modules/video.mk
+wget -P target/linux/x86/64/ https://github.com/coolsnowwolf/lede/raw/master/target/linux/x86/64/config-5.10
 
 # Addition-Trans-zh-master and fix APNS
 cp -rf ../PATCH/duplicate/addition-trans-zh-x86 ./package/utils/addition-trans-zh
@@ -25,11 +30,6 @@ latest_release="$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | gr
 wget https://downloads.openwrt.org/releases/${latest_release}/targets/x86/64/packages/Packages.gz
 zgrep -m 1 "Depends: kernel (=.*)$" Packages.gz | sed -e 's/.*-\(.*\))/\1/' >.vermagic
 sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
-
-# Crypto
-echo '
-CONFIG_CRYPTO_AES_NI_INTEL=y
-' >> ./target/linux/x86/64/config-5.10
 
 # Final Cleanup
 chmod -R 755 ./
