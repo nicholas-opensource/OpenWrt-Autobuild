@@ -2,12 +2,10 @@
 clear
 
 # GCC CFlags for x86 and Kernel Settings
-sed -i 's/O3 -Wl,--gc-sections/O2 -Wl,--gc-sections -mtune=goldmont-plus/g' include/target.mk
+sed -i 's/O2 -Wl,--gc-sections/O2 -Wl,--gc-sections -mtune=goldmont-plus/g' include/target.mk
 rm -rf ./package/kernel/linux/modules/video.mk
-rm -rf ./target/linux/x86/64/config-5.10
-wget -P package/kernel/linux/modules/ https://github.com/coolsnowwolf/lede/raw/master/package/kernel/linux/modules/video.mk
+cp -rf ../lede/package/kernel/linux/modules/video.mk ./package/kernel/linux/modules/video.mk
 sed -i 's,CONFIG_DRM_I915_CAPTURE_ERROR ,CONFIG_DRM_I915_CAPTURE_ERROR=n ,g' package/kernel/linux/modules/video.mk
-wget -P target/linux/x86/64/ https://github.com/coolsnowwolf/lede/raw/master/target/linux/x86/64/config-5.10
 
 # Addition-Trans-zh-master and fix APNS
 cp -rf ../PATCH/duplicate/addition-trans-zh-x86 ./package/utils/addition-trans-zh

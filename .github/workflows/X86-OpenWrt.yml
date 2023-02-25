@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/X86-OpenWrt.yml'
       - 'SEED/X86/config.seed'
+      - 'SEED/extra.cfg'
       - 'SCRIPTS/switch'
 #  watch:
 #    types: [started]

@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/R4S-OpenWrt.yml'
       - 'SEED/R4S/config.seed'
+      - 'SEED/extra.cfg'
       - 'SCRIPTS/switch'
  # watch:
  #   types: [started]

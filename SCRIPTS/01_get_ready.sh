@@ -25,4 +25,17 @@ cp -f ./openwrt_release/version.date ./openwrt/version.date
 cp -rf ./openwrt_release/target/linux/* ./openwrt/target/linux/
 cp -rf ./openwrt_release/package/kernel/linux/* ./openwrt/package/kernel/linux/
 
+# Clone packages
+git clone -b master --depth 1 https://github.com/immortalwrt/immortalwrt.git immortalwrt
+git clone -b openwrt-21.02 --depth 1 https://github.com/immortalwrt/immortalwrt.git immortalwrt_21
+git clone -b master --depth 1 https://github.com/immortalwrt/packages.git immortalwrt_pkg
+git clone -b master --depth 1 https://github.com/immortalwrt/luci.git immortalwrt_luci
+git clone -b master --depth 1 https://github.com/coolsnowwolf/lede.git lede
+git clone -b master --depth 1 https://github.com/coolsnowwolf/packages.git lede_pkg
+git clone -b master --depth 1 https://github.com/coolsnowwolf/luci.git lede_luci
+git clone -b master --depth 1 https://github.com/openwrt/openwrt.git openwrt_ma
+git clone -b master --depth 1 https://github.com/openwrt/packages.git openwrt_pkg_ma
+git clone -b master --depth 1 https://github.com/openwrt/luci.git openwrt_luci_ma
+git clone -b master --depth 1 https://github.com/QiuSimons/OpenWrt-Add.git OpenWrt-Add
+
 exit 0
