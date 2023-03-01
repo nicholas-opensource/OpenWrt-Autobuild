@@ -92,7 +92,8 @@ sed -i '/"$threads"/d' package/new/autocore/files/x86/autocore
 rm -rf ./feeds/packages/utils/coremark
 cp -rf ../immortalwrt_pkg/utils/coremark ./feeds/packages/utils/coremark
 # Autoreboot
-cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./package/new/luci-app-autoreboot
+cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./feeds/luci/applications/luci-app-autoreboot
+ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
@@ -121,7 +122,8 @@ git clone -b master --depth 1 https://github.com/BROBIRD/openwrt-r8168.git packa
 patch -p1 <../PATCH/r8168/r8168-fix_LAN_led-for_r4s-from_TL.patch
 cp -rf ../PATCH/backport/igc ./target/linux/x86/files-5.10
 # Ram-free
-cp -rf ../immortalwrt_luci/applications/luci-app-ramfree ./package/new/luci-app-ramfree
+cp -rf ../immortalwrt_luci/applications/luci-app-ramfree ./feeds/luci/applications/luci-app-ramfree
+ln -sf ../../../feeds/luci/applications/luci-app-ramfree ./package/feeds/luci/luci-app-ramfree
 
 ## Ending
 # Lets Fuck
