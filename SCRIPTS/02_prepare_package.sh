@@ -31,7 +31,7 @@ sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lan
 # Backport MG-LRU to linux kernel 5.10
 cp -rf ../PATCH/backport/MG-LRU/* ./target/linux/generic/pending-5.10/
 # ARM64: Add CPU model name in proc cpuinfo
-wget -P target/linux/generic/hack-5.10/ https://github.com/immortalwrt/immortalwrt/raw/master/target/linux/generic/hack-5.10/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
+cp -rf ../immortalwrt/target/linux/generic/hack-5.10/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch ./target/linux/generic/hack-5.10/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # Patches for SSL
 rm -rf ./package/libs/mbedtls
 cp -rf ../immortalwrt/package/libs/mbedtls ./package/libs/mbedtls
@@ -40,12 +40,10 @@ cp -rf ../immortalwrt_21/package/libs/openssl ./package/libs/openssl
 # Fix fstools
 wget -qO - https://github.com/coolsnowwolf/lede/commit/8a4db76.patch | patch -p1
 # Patch kernel to fix fullcone conflict
-pushd target/linux/generic/hack-5.10
-wget https://github.com/coolsnowwolf/lede/raw/master/target/linux/generic/hack-5.10/952-net-conntrack-events-support-multiple-registrant.patch
-popd
+cp -rf ../lede/target/linux/generic/hack-5.10/952-net-conntrack-events-support-multiple-registrant.patch ./target/linux/generic/hack-5.10/952-net-conntrack-events-support-multiple-registrant.patch
 # Patch firewall to enable fullcone
 rm -rf ./package/network/config/firewall4
-cp -rf ../immortalwrt/package/network/config/firewall4  ./package/network/config/firewall4
+cp -rf ../immortalwrt/package/network/config/firewall4 ./package/network/config/firewall4
 cp -f ../PATCH/firewall/990-unconditionally-allow-ct-status-dnat.patch ./package/network/config/firewall4/patches/990-unconditionally-allow-ct-status-dnat.patch
 rm -rf ./package/libs/libnftnl
 cp -rf ../immortalwrt/package/libs/libnftnl ./package/libs/libnftnl
@@ -53,7 +51,6 @@ rm -rf ./package/network/utils/nftables
 cp -rf ../immortalwrt/package/network/utils/nftables ./package/network/utils/nftables
 mkdir -p package/network/config/firewall/patches
 cp -rf ../immortalwrt_21/package/network/config/firewall/patches/100-fullconenat.patch ./package/network/config/firewall/patches/100-fullconenat.patch
-wget -qO- https://github.com/msylgj/R2S-R4S-OpenWrt/raw/master/PATCHES/001-fix-firewall3-flock.patch | patch -p1
 # Patch LuCI to add fullcone button
 patch -p1 <../PATCH/firewall/luci-app-firewall_add_fullcone.patch
 # FullCone modules
@@ -95,7 +92,7 @@ sed -i '/"$threads"/d' package/new/autocore/files/x86/autocore
 rm -rf ./feeds/packages/utils/coremark
 cp -rf ../immortalwrt_pkg/utils/coremark ./feeds/packages/utils/coremark
 # Autoreboot
-cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
+cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./package/new/luci-app-autoreboot
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
@@ -124,7 +121,7 @@ git clone -b master --depth 1 https://github.com/BROBIRD/openwrt-r8168.git packa
 patch -p1 <../PATCH/r8168/r8168-fix_LAN_led-for_r4s-from_TL.patch
 cp -rf ../PATCH/backport/igc ./target/linux/x86/files-5.10
 # Ram-free
-cp -rf ../immortalwrt_luci/applications/luci-app-ramfree ./package/feeds/luci/luci-app-ramfree
+cp -rf ../immortalwrt_luci/applications/luci-app-ramfree ./package/new/luci-app-ramfree
 
 ## Ending
 # Lets Fuck
