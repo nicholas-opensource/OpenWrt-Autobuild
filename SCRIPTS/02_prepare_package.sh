@@ -77,12 +77,15 @@ rm -rf ./package/firmware/linux-firmware/Makefile
 cp -rf ../lede/package/firmware/linux-firmware/Makefile ./package/firmware/linux-firmware/Makefile
 mkdir -p target/linux/rockchip/files-5.10
 cp -rf ../PATCH/duplicate/files-5.10 ./target/linux/rockchip/
+sed -i 's,+LINUX_6_1:kmod-drm-display-helper,,g' target/linux/rockchip/modules.mk
+sed -i '/drm_dp_aux_bus\.ko/d' target/linux/rockchip/modules.mk
 sed -i '/set_interface_core 20 "eth1"/a \\tethtool -K eth1 tso on sg on tx on' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
 rm -rf ./package/boot/uboot-rockchip
 cp -rf ../lede/package/boot/uboot-rockchip ./package/boot/uboot-rockchip
 cp -rf ../lede/package/boot/arm-trusted-firmware-rockchip-vendor ./package/boot/arm-trusted-firmware-rockchip-vendor
 rm -rf ./package/kernel/linux/modules/video.mk
 cp -rf ../immortalwrt/package/kernel/linux/modules/video.mk ./package/kernel/linux/modules/video.mk
+sed -i '/nouveau\.ko/d' package/kernel/linux/modules/video.mk
 
 ## Extra Packages
 # AutoCore
@@ -94,6 +97,22 @@ cp -rf ../immortalwrt_pkg/utils/coremark ./feeds/packages/utils/coremark
 # Autoreboot
 cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./feeds/luci/applications/luci-app-autoreboot
 ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
+# Dae Ready
+cp -rf ../openwrt_ma/config/Config-kernel.in ./config/Config-kernel.in
+#sed -i '/HOST_LOADLIBES/d' include/kernel-build.mk
+#sed -i '/HOST_LOADLIBES/d' include/kernel.mk
+#sed -i 's,KBUILD_HOSTLDLIBS,KBUILD_HOSTLDFLAGS,g' include/kernel.mk
+#sed -i '/HOST_LOADLIBES/d' package/kernel/bpf-headers/Makefile
+wget -qO - https://github.com/openwrt/openwrt/commit/21733cb6.patch | patch -p1
+wget -qO - https://github.com/openwrt/openwrt/commit/aa95787e.patch | patch -p1
+wget -qO - https://github.com/openwrt/openwrt/commit/29d7d6a8.patch | patch -p1
+rm -rf ./tools/dwarves
+cp -rf ../openwrt_ma/tools/dwarves ./tools/dwarves
+rm -rf ./tools/elfutils
+cp -rf ../openwrt_ma/tools/elfutils ./tools/elfutils
+cp -rf ../openwrt_ma/target/linux/generic/backport-5.10/200-v5.18-tools-resolve_btfids-Build-with-host-flags.patch ./target/linux/generic/backport-5.10/200-v5.18-tools-resolve_btfids-Build-with-host-flags.patch
+rm -rf ./feeds/packages/net/frr
+cp -rf ../openwrt_pkg_ma/net/frr feeds/packages/net/frr
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
@@ -130,7 +149,7 @@ ln -sf ../../../feeds/luci/applications/luci-app-ramfree ./package/feeds/luci/lu
 mkdir package/base-files/files/usr/bin
 cp -f ../PATCH/script/fuck package/base-files/files/usr/bin/fuck
 # Conntrack_Max
-sed -i 's/16384/65535/g' package/kernel/linux/files/sysctl-nf-conntrack.conf
+wget -qO - https://github.com/openwrt/openwrt/commit/bbf39d07.patch | patch -p1
 # Remove config
 rm -rf .config
 cat ../SEED/extra.cfg >> ./target/linux/generic/config-5.10

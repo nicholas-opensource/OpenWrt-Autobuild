@@ -18,7 +18,15 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id
     
     steps:
-    - name: Clone Repository
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        swap-size-mb: 2048
+        root-reserve-mb: 2048
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+    - name: Checkout
       uses: actions/checkout@main
     - name: Show CPU Model
       run: |
@@ -86,13 +94,11 @@ jobs:
     - name: Make Toolchain
       run: |
         cd openwrt
-        let make_process=$(nproc)+1
-        make toolchain/install -j${make_process} V=m
+        make toolchain/install -j$(($(nproc) + 1)) V=m
     - name: Compile Openwrt
       run: |
         cd openwrt
-        let make_process=$(nproc)+1
-        make -j${make_process} V=m || make -j1 V=s
+        IGNORE_ERRORS=1 make -j$(($(nproc) + 1))
     - name: Cleaning
       run: |
         cd openwrt/bin/targets/x86/64
