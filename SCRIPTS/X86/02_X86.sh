@@ -6,7 +6,7 @@ wget -qO - https://github.com/openwrt/openwrt/commit/c21a3570.patch | patch -p1
 cp -rf ../lede/target/linux/x86/64/config-5.10 ./target/linux/x86/64/config-5.10
 
 # GCC CFlags for x86 and Kernel Settings
-sed -i 's/O2 -Wl,--gc-sections/O2 -Wl,--gc-sections -mtune=goldmont-plus/g' include/target.mk
+sed -i 's/O2/O2 -mtune=goldmont-plus/g' include/target.mk
 rm -rf ./package/kernel/linux/modules/video.mk
 cp -rf ../lede/package/kernel/linux/modules/video.mk ./package/kernel/linux/modules/video.mk
 sed -i '/nouveau\.ko/d' package/kernel/linux/modules/video.mk

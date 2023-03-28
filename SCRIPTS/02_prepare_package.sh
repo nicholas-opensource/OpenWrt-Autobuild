@@ -3,9 +3,7 @@ clear
 
 ## Prepare
 # GCC CFlags
-sed -i 's/Os/O2 -Wl,--gc-sections/g' include/target.mk
-wget -qO - https://github.com/openwrt/openwrt/commit/8249a8c.patch | patch -p1
-wget -qO - https://github.com/openwrt/openwrt/commit/66fa343.patch | patch -p1
+sed -i 's,Os,O2,g' include/target.mk
 # Update feeds
 ./scripts/feeds update -a && ./scripts/feeds install -a
 # Irqbalance
@@ -79,7 +77,6 @@ mkdir -p target/linux/rockchip/files-5.10
 cp -rf ../PATCH/duplicate/files-5.10 ./target/linux/rockchip/
 sed -i 's,+LINUX_6_1:kmod-drm-display-helper,,g' target/linux/rockchip/modules.mk
 sed -i '/drm_dp_aux_bus\.ko/d' target/linux/rockchip/modules.mk
-sed -i '/set_interface_core 20 "eth1"/a \\tethtool -K eth1 tso on sg on tx on' target/linux/rockchip/armv8/base-files/etc/hotplug.d/net/40-net-smp-affinity
 rm -rf ./package/boot/uboot-rockchip
 cp -rf ../lede/package/boot/uboot-rockchip ./package/boot/uboot-rockchip
 cp -rf ../lede/package/boot/arm-trusted-firmware-rockchip-vendor ./package/boot/arm-trusted-firmware-rockchip-vendor
@@ -98,21 +95,20 @@ cp -rf ../immortalwrt_pkg/utils/coremark ./feeds/packages/utils/coremark
 cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./feeds/luci/applications/luci-app-autoreboot
 ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
 # Dae Ready
-cp -rf ../openwrt_ma/config/Config-kernel.in ./config/Config-kernel.in
-#sed -i '/HOST_LOADLIBES/d' include/kernel-build.mk
-#sed -i '/HOST_LOADLIBES/d' include/kernel.mk
-#sed -i 's,KBUILD_HOSTLDLIBS,KBUILD_HOSTLDFLAGS,g' include/kernel.mk
-#sed -i '/HOST_LOADLIBES/d' package/kernel/bpf-headers/Makefile
-wget -qO - https://github.com/openwrt/openwrt/commit/21733cb6.patch | patch -p1
-wget -qO - https://github.com/openwrt/openwrt/commit/aa95787e.patch | patch -p1
-wget -qO - https://github.com/openwrt/openwrt/commit/29d7d6a8.patch | patch -p1
+cp -rf ../immortalwrt/config/Config-kernel.in ./config/Config-kernel.in
 rm -rf ./tools/dwarves
 cp -rf ../openwrt_ma/tools/dwarves ./tools/dwarves
+wget -qO - https://github.com/openwrt/openwrt/commit/aa95787e.patch | patch -p1
+wget -qO - https://github.com/openwrt/openwrt/commit/29d7d6a8.patch | patch -p1
 rm -rf ./tools/elfutils
 cp -rf ../openwrt_ma/tools/elfutils ./tools/elfutils
-cp -rf ../openwrt_ma/target/linux/generic/backport-5.10/200-v5.18-tools-resolve_btfids-Build-with-host-flags.patch ./target/linux/generic/backport-5.10/200-v5.18-tools-resolve_btfids-Build-with-host-flags.patch
+rm -rf ./package/libs/elfutils
+cp -rf ../openwrt_ma/package/libs/elfutils ./package/libs/elfutils
+wget -qO - https://github.com/openwrt/openwrt/commit/b839f3d5.patch | patch -p1
 rm -rf ./feeds/packages/net/frr
 cp -rf ../openwrt_pkg_ma/net/frr feeds/packages/net/frr
+cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
+ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
