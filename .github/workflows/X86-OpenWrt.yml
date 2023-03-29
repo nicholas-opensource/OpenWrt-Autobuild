@@ -94,11 +94,11 @@ jobs:
     - name: Make Toolchain
       run: |
         cd openwrt
-        make toolchain/install -j$(($(nproc) + 1)) V=m
+        IGNORE_ERRORS=1 make toolchain/install -j$(($(nproc) + 1)) V=m
     - name: Compile Openwrt
       run: |
         cd openwrt
-        IGNORE_ERRORS=1 make -j$(($(nproc) + 1))
+        IGNORE_ERRORS=1 make -j$(($(nproc) + 1)) V=m
     - name: Cleaning
       run: |
         cd openwrt/bin/targets/x86/64
