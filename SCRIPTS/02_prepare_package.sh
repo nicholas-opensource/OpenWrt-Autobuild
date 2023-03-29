@@ -61,7 +61,6 @@ rm -rf ./target/linux/rockchip/armv8/config-5.10
 cp -rf ../openwrt_release/target/linux/rockchip/armv8/config-5.10 ./target/linux/rockchip/armv8/config-5.10
 rm -rf ./target/linux/rockchip/patches-5.10/002-net-usb-r8152-add-LED-configuration-from-OF.patch
 rm -rf ./target/linux/rockchip/patches-5.10/003-dt-bindings-net-add-RTL8152-binding-documentation.patch
-cp -rf ../PATCH/rockchip-5.10/* ./target/linux/rockchip/patches-5.10/
 rm -rf ./package/firmware/linux-firmware/intel.mk
 cp -rf ../lede/package/firmware/linux-firmware/intel.mk ./package/firmware/linux-firmware/intel.mk
 rm -rf ./package/firmware/linux-firmware/Makefile
