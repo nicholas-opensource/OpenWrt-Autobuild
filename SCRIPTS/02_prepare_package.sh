@@ -108,6 +108,7 @@ rm -rf ./feeds/packages/net/frr
 cp -rf ../openwrt_pkg_ma/net/frr feeds/packages/net/frr
 cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
+cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
