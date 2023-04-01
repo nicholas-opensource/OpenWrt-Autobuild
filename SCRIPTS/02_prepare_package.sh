@@ -107,10 +107,12 @@ cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
 cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
 # Dae Update
-sed -i '/SOURCE_URL:=/d;/HASH/d;/SOURCE:=/d' feeds/packages/net/dae/Makefile
-sed -i "s/PKG_RELEASE:=1/PKG_RELEASE:=$(date +'%Y%m%d')/g" feeds/packages/net/dae/Makefile
-sed -i '10i\PKG_SOURCE:=$(PKG_NAME)-main.zip' feeds/packages/net/dae/Makefile
-sed -i '11i\PKG_SOURCE_URL:=https://codeload.github.com/daeuniverse/dae/zip/main?' feeds/packages/net/dae/Makefile
+sed -i '/zip/d;/HASH/d;/RELEASE:=/d' feeds/packages/net/dae/Makefile
+sed -i "/VERSION:/ s/$/-$(date +'%Y%m%d')/" feeds/packages/net/dae/Makefile
+sed -i '10i\PKG_SOURCE_PROTO:=git' feeds/packages/net/dae/Makefile
+sed -i '11i\PKG_SOURCE_URL:=https://github.com/daeuniverse/dae.git' feeds/packages/net/dae/Makefile
+sed -i "12i\PKG_SOURCE_VERSION:=$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4)" feeds/packages/net/dae/Makefile
+sed -i '13i\PKG_MIRROR_HASH:=skip' feeds/packages/net/dae/Makefile
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
