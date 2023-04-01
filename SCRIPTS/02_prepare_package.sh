@@ -40,13 +40,10 @@ rm -rf ./package/libs/libnftnl
 cp -rf ../immortalwrt/package/libs/libnftnl ./package/libs/libnftnl
 rm -rf ./package/network/utils/nftables
 cp -rf ../immortalwrt/package/network/utils/nftables ./package/network/utils/nftables
-mkdir -p package/network/config/firewall/patches
-cp -rf ../immortalwrt_21/package/network/config/firewall/patches/100-fullconenat.patch ./package/network/config/firewall/patches/100-fullconenat.patch
 # Patch LuCI to add fullcone button
 patch -p1 <../PATCH/firewall/luci-app-firewall_add_fullcone.patch
 # FullCone modules
 git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone package/new/nft-fullcone
-cp -rf ../PATCH/duplicate/fullconenat ./package/network/fullconenat
 # Dnsmasq
 rm -rf ./package/network/services/dnsmasq
 cp -rf ../openwrt_ma/package/network/services/dnsmasq ./package/network/services/dnsmasq
@@ -109,6 +106,11 @@ cp -rf ../openwrt_pkg_ma/net/frr feeds/packages/net/frr
 cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
 cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
+# Dae Update
+sed -i '/SOURCE_URL:=/d;/HASH/d;/SOURCE:=/d' feeds/packages/net/dae/Makefile
+sed -i "s/PKG_RELEASE:=1/PKG_RELEASE:=$(date +'%Y%m%d')/g" feeds/packages/net/dae/Makefile
+sed -i '10i\PKG_SOURCE:=$(PKG_NAME)-main.zip' feeds/packages/net/dae/Makefile
+sed -i '11i\PKG_SOURCE_URL:=https://codeload.github.com/daeuniverse/dae/zip/main?' feeds/packages/net/dae/Makefile
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
