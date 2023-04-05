@@ -105,6 +105,9 @@ rm -rf ./feeds/packages/net/frr
 cp -rf ../openwrt_pkg_ma/net/frr feeds/packages/net/frr
 cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
+pushd feeds/packages
+wget -qO - https://github.com/openwrt/packages/commit/7a64a5f4.patch | patch -p1
+popd
 cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
 # Dae Update
 sed -i '/zip/d;/HASH/d;/RELEASE:=/d' feeds/packages/net/dae/Makefile

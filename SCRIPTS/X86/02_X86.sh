@@ -28,6 +28,12 @@ fi
 exit 0
 '> ./package/base-files/files/etc/rc.local
 
+# Enable SMP
+echo '
+CONFIG_X86_INTEL_PSTATE=y
+CONFIG_SMP=y
+' >>./target/linux/x86/config-5.10
+
 # Match Vermagic
 latest_release="$(curl -s https://api.github.com/repos/openwrt/openwrt/tags | grep -Eo "22.03.+[0-9\.]" | head -n 1)"
 wget https://downloads.openwrt.org/releases/${latest_release}/targets/x86/64/packages/Packages.gz
