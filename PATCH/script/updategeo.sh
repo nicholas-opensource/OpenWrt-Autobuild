@@ -1,8 +1,8 @@
 #!/bin/sh
 
-geoip_url="https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat"
+geoip_url="https://ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
 geoip_path="/tmp/geoip.dat"
-geosite_url="https://fastly.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat"
+geosite_url="https://ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
 geosite_path="/tmp/geosite.dat"
 
 wget -O $geoip_path $geoip_url
