@@ -24,7 +24,7 @@ wget -P target/linux/generic/pending-5.10/ https://github.com/openwrt/openwrt/ra
 # Backport MG-LRU to linux kernel 5.10
 cp -rf ../PATCH/backport/MG-LRU/* ./target/linux/generic/pending-5.10/
 # ARM64: Add CPU model name in proc cpuinfo
-cp -rf ../immortalwrt/target/linux/generic/hack-5.10/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch ./target/linux/generic/hack-5.10/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
+cp -rf ../immortalwrt/target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch ./target/linux/generic/hack-5.10/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # Patches for SSL
 rm -rf ./package/libs/mbedtls
 cp -rf ../immortalwrt/package/libs/mbedtls ./package/libs/mbedtls
