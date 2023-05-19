@@ -9,6 +9,17 @@ If this repository violates your legal rights, please contact me.
 This repository is for general informational purposes only. All content in the repository is provided in good faith. However, we make no representation or warranty of any kind, express or implied,
 regarding the accuracy, adequacy, validity, reliability, availability, or completeness of the repository.  
 
+<p align="left">
+    <img src="https://custom-icon-badges.herokuapp.com/github/license/nicholas-opensource/OpenWrt-Autobuild?logo=law&color=green"/>
+    <img src="https://custom-icon-badges.herokuapp.com/github/last-commit/daeuniverse/dae?logo=history&logoColor=white"/>
+    <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fnicholas-opensource%2FOpenWrt-Autobuild&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false"/>
+</p>
+<p align="left">
+    <img src="https://github.com/nicholas-opensource/OpenWrt-Autobuild/workflows/X86-OpenWrt/badge.svg">
+    <img src="https://github.com/nicholas-opensource/OpenWrt-Autobuild/workflows/R2S-OpenWrt/badge.svg">
+    <img src="https://github.com/nicholas-opensource/OpenWrt-Autobuild/workflows/R4S-OpenWrt/badge.svg">
+</p>
+
 ---
 ### Key Infomations
 
