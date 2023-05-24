@@ -74,8 +74,7 @@ rm -rf ./package/boot/uboot-rockchip
 cp -rf ../lede/package/boot/uboot-rockchip ./package/boot/uboot-rockchip
 cp -rf ../lede/package/boot/arm-trusted-firmware-rockchip-vendor ./package/boot/arm-trusted-firmware-rockchip-vendor
 rm -rf ./package/kernel/linux/modules/video.mk
-cp -rf ../immortalwrt/package/kernel/linux/modules/video.mk ./package/kernel/linux/modules/video.mk
-sed -i '/nouveau\.ko/d' package/kernel/linux/modules/video.mk
+wget https://raw.githubusercontent.com/immortalwrt/immortalwrt/openwrt-23.05/package/kernel/linux/modules/video.mk -O package/kernel/linux/modules/video.mk
 # Disable Mitigations
 sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/mmc.bootscript
 sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/nanopi-r2s.bootscript
@@ -109,6 +108,8 @@ wget -qO - https://github.com/openwrt/openwrt/commit/b839f3d5.patch | patch -p1
 rm -rf ./feeds/packages/net/frr
 cp -rf ../openwrt_pkg_ma/net/frr feeds/packages/net/frr
 cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
+rm -rf ./feeds/packages/net/dae/Makefile
+wget https://raw.githubusercontent.com/immortalwrt/packages/openwrt-23.05/net/dae/Makefile -O feeds/packages/net/dae/Makefile
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
 pushd feeds/packages
 wget -qO - https://github.com/openwrt/packages/commit/7a64a5f4.patch | patch -p1
