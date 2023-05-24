@@ -94,11 +94,11 @@ jobs:
     - name: Make Toolchain
       run: |
         cd openwrt
-        IGNORE_ERRORS=1 make toolchain/install -j$(($(nproc) + 1)) V=m
+        IGNORE_ERRORS=1 make toolchain/install -j$(($(nproc) + 1)) V=s
     - name: Compile Openwrt
       run: |
         cd openwrt
-        IGNORE_ERRORS=1 make -j$(($(nproc) + 1)) V=m
+        IGNORE_ERRORS=1 make -j$(($(nproc) + 1)) V=s
     - name: Cleaning
       run: |
         cd openwrt/bin/targets/rockchip/armv8
