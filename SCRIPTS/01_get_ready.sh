@@ -34,8 +34,8 @@ git clone -b master --depth 1 https://github.com/coolsnowwolf/lede.git lede
 git clone -b master --depth 1 https://github.com/coolsnowwolf/packages.git lede_pkg
 git clone -b master --depth 1 https://github.com/coolsnowwolf/luci.git lede_luci
 git clone -b master --depth 1 https://github.com/openwrt/openwrt.git openwrt_ma
-git clone -b master --depth 1 https://github.com/openwrt/packages.git openwrt_pkg_ma
-git clone -b master --depth 1 https://github.com/openwrt/luci.git openwrt_luci_ma
+git clone -b main --depth 1 https://github.com/openwrt/packages.git openwrt_pkg_ma
+git clone -b main --depth 1 https://github.com/openwrt/luci.git openwrt_luci_ma
 git clone -b master --depth 1 https://github.com/QiuSimons/OpenWrt-Add.git OpenWrt-Add
 
 exit 0

@@ -3,7 +3,7 @@ name: X86-OpenWrt
 on:
   push:
     branches: 
-      - main
+      - 22.03_EOL
     paths:
       - '.github/workflows/X86-OpenWrt.yml'
       - 'SEED/X86/config.seed'

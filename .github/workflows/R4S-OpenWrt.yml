@@ -3,7 +3,7 @@ name: R4S-OpenWrt
 on:
   push:
     branches: 
-      - main
+      - 22.03_EOL
     paths:
       - '.github/workflows/R4S-OpenWrt.yml'
       - 'SEED/R4S/config.seed'
