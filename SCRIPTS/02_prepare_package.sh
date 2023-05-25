@@ -54,7 +54,6 @@ cp -rf ../lede/target/linux/rockchip ./target/linux/rockchip
 rm -rf ./target/linux/rockchip/patches-5.15/*otorcomm*
 rm -rf ./target/linux/rockchip/patches-5.15/*8152*
 sed -i 's,+LINUX_6_1:kmod-drm-display-helper,,g' target/linux/rockchip/modules.mk
-sed -i '/drm_dp_aux_bus\.ko/d' target/linux/rockchip/modules.mk
 rm -rf ./package/boot/uboot-rockchip
 cp -rf ../lede/package/boot/uboot-rockchip ./package/boot/uboot-rockchip
 cp -rf ../lede/package/boot/arm-trusted-firmware-rockchip-vendor ./package/boot/arm-trusted-firmware-rockchip-vendor
@@ -116,6 +115,9 @@ cp -rf ../immortalwrt/package/kernel/r8152 ./package/new/r8152
 git clone -b master --depth 1 https://github.com/BROBIRD/openwrt-r8168.git package/new/r8168
 patch -p1 <../PATCH/r8168/r8168-fix_LAN_led-for_r4s-from_TL.patch
 cp -rf ../lede/target/linux/x86/patches-5.15/996-intel-igc-i225-i226-disable-eee.patch ./target/linux/x86/patches-5.15/996-intel-igc-i225-i226-disable-eee.patch
+# Revert python3 version
+rm -rf ./feeds/packages/lang/python
+cp -rf ../lede_pkg/lang/python ./feeds/packages/lang/python
 # Ram-free
 cp -rf ../immortalwrt_luci/applications/luci-app-ramfree ./feeds/luci/applications/luci-app-ramfree
 ln -sf ../../../feeds/luci/applications/luci-app-ramfree ./package/feeds/luci/luci-app-ramfree
