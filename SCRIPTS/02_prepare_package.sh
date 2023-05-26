@@ -46,17 +46,16 @@ git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone packag
 
 ## Change x86 & rockchip target and u-boot
 rm -rf ./target/linux/rockchip
-cp -rf ../lede/target/linux/rockchip ./target/linux/rockchip
+cp -rf ../immortalwrt_23/target/linux/rockchip ./target/linux/rockchip
 #rm -rf ./target/linux/rockchip/Makefile
 #cp -rf ../openwrt_release/target/linux/rockchip/Makefile ./target/linux/rockchip/Makefile
 #rm -rf ./target/linux/rockchip/armv8/config-5.15
 #cp -rf ../openwrt_release/target/linux/rockchip/armv8/config-5.15 ./target/linux/rockchip/armv8/config-5.15
-rm -rf ./target/linux/rockchip/patches-5.15/*otorcomm*
-rm -rf ./target/linux/rockchip/patches-5.15/*8152*
-sed -i 's,+LINUX_6_1:kmod-drm-display-helper,,g' target/linux/rockchip/modules.mk
+cp -rf ../PATCH/rockchip-5.15/* ./target/linux/rockchip/patches-5.15/
 rm -rf ./package/boot/uboot-rockchip
-cp -rf ../lede/package/boot/uboot-rockchip ./package/boot/uboot-rockchip
-cp -rf ../lede/package/boot/arm-trusted-firmware-rockchip-vendor ./package/boot/arm-trusted-firmware-rockchip-vendor
+cp -rf ../immortalwrt_23/package/boot/uboot-rockchip ./package/boot/uboot-rockchip
+rm -rf ./package/boot/arm-trusted-firmware-rockchip
+cp -rf ../immortalwrt_23/package/boot/arm-trusted-firmware-rockchip ./package/boot/arm-trusted-firmware-rockchip
 rm -rf ./package/kernel/linux/modules/video.mk
 cp -rf ../lede/package/kernel/linux/modules/video.mk ./package/kernel/linux/modules/video.mk
 sed -i '/nouveau\.ko/d' package/kernel/linux/modules/video.mk
@@ -115,9 +114,6 @@ cp -rf ../immortalwrt/package/kernel/r8152 ./package/new/r8152
 git clone -b master --depth 1 https://github.com/BROBIRD/openwrt-r8168.git package/new/r8168
 patch -p1 <../PATCH/r8168/r8168-fix_LAN_led-for_r4s-from_TL.patch
 cp -rf ../lede/target/linux/x86/patches-5.15/996-intel-igc-i225-i226-disable-eee.patch ./target/linux/x86/patches-5.15/996-intel-igc-i225-i226-disable-eee.patch
-# Revert python3 version
-rm -rf ./feeds/packages/lang/python
-cp -rf ../lede_pkg/lang/python ./feeds/packages/lang/python
 # Ram-free
 cp -rf ../immortalwrt_luci/applications/luci-app-ramfree ./feeds/luci/applications/luci-app-ramfree
 ln -sf ../../../feeds/luci/applications/luci-app-ramfree ./package/feeds/luci/luci-app-ramfree
