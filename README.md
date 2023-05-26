@@ -11,7 +11,7 @@ regarding the accuracy, adequacy, validity, reliability, availability, or comple
 
 <p align="left">
     <img src="https://custom-icon-badges.herokuapp.com/github/license/nicholas-opensource/OpenWrt-Autobuild?logo=law&color=green"/>
-    <img src="https://custom-icon-badges.herokuapp.com/github/last-commit/daeuniverse/dae?logo=history&logoColor=white"/>
+    <img src="https://custom-icon-badges.herokuapp.com/github/last-commit/nicholas-opensource/OpenWrt-Autobuild?logo=history&logoColor=white"/>
     <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fnicholas-opensource%2FOpenWrt-Autobuild&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false"/>
 </p>
 <p align="left">
@@ -29,7 +29,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v22.03.5
+OpenWrt official v23.05-SNAPSHOT ( Test only, waiting v23.05.0-rc1 )  
 
 ---
 ### Feature
@@ -38,13 +38,25 @@ OpenWrt official v22.03.5
 
 2.Only contain the most basic software for the stability
 
-3.Fullcone NAT supported ( `fullcone-nat` and `fullcone-nat6`, although I think nat6 is stupid )
+3.Fullcone NAT supported
 
 4.Opkg vermagic matched with OpenWrt manifest ( You can install the software as if you have AppStore~ )
 
-5.Port some old software for the LuCI JavaScript and fix the `luci-app-upnp` by [msylgj](https://github.com/msylgj)
+5.Add package [dae](https://github.com/daeuniverse/dae), a high performance eBPF transparent proxy client  
+Add command `updategeo` to download `geoip.dat` and `geosite.dat` and place them to the correct path for `dae`  
+* The init of dae has a problem temporarily and cannot run yet  
+* Run dae with command:  
+```
+updategeo
+chmod 600 /etc/dae/config.dae
+dae run -c /etc/dae/config.dae
+```
+* Run dae with log output:  
+```
+dae run -c /etc/dae/config.dae &> /tmp/dae.log
+```
 
-6.Backport [MG-LRU](https://www.phoronix.com/news/MGLRU-Performance-OpenWRT) to OpenWrt k5.10
+6.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
 
 7.Add support for phone USB hotspot sharing, both for Android and iPhone
 
@@ -70,6 +82,8 @@ Intel: e1000, e1000e, ixgbe, igb, igc, i40e
 Broadcom: tg3
 Realtek: r8125, r8169
 ```
+
+2.Modify kmod-igc ( Intel Foxville i225 / i226 ) rx / tx [ring buffer](https://fasterdata.es.net/host-tuning/linux/nic-tuning/) to 4096 to prevent the NIC from suddenly stop working  
 
 #### R2S Feature
 
