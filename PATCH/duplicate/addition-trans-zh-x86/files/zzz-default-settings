@@ -19,6 +19,9 @@ uci set uhttpd.main.script_network_timeout=65535
 uci commit uhttpd
 /etc/init.d/uhttpd restart
 
+#Defalut lan IP
+uci set network.lan.ipaddr=192.168.1.1
+
 #Remove IPv6
 uci delete network.globals.ula_prefix
 uci delete network.lan.ip6assign
@@ -37,6 +40,7 @@ uci commit network
 #Firewall
 uci set firewall.@defaults[0].fullcone='1'
 uci set firewall.@defaults[0].flow_offloading='1'
+uci set firewall.@defaults[0].flow_offloading_hw='0'
 uci commit firewall
 
 #dnsmasq
