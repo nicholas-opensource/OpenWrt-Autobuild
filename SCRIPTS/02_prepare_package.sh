@@ -77,18 +77,18 @@ sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-pc.cf
 
 ## Extra Packages
 # AutoCore
-cp -rf ../immortalwrt/package/emortal/autocore ./package/new/autocore
+cp -rf ../immortalwrt_23/package/emortal/autocore ./package/new/autocore
 sed -i 's/"getTempInfo" /"getTempInfo", "getCPUBench", "getCPUUsage" /g' package/new/autocore/files/luci-mod-status-autocore.json
 rm -rf ./package/new/autocore/files/autocore
 wget https://raw.githubusercontent.com/QiuSimons/OpenWrt-Add/master/autocore/files/x86/autocore -O package/new/autocore/files/autocore
 rm -rf ./feeds/luci/modules/luci-base
-cp -rf ../immortalwrt_luci/modules/luci-base ./feeds/luci/modules/luci-base
+cp -rf ../immortalwrt_luci_23/modules/luci-base ./feeds/luci/modules/luci-base
 sed -i "s,(br-lan),,g" feeds/luci/modules/luci-base/root/usr/share/rpcd/ucode/luci
 rm -rf ./feeds/luci/modules/luci-mod-status
-cp -rf ../immortalwrt_luci/modules/luci-mod-status ./feeds/luci/modules/luci-mod-status
+cp -rf ../immortalwrt_luci_23/modules/luci-mod-status ./feeds/luci/modules/luci-mod-status
 rm -rf ./feeds/packages/utils/coremark
 cp -rf ../immortalwrt_pkg/utils/coremark ./feeds/packages/utils/coremark
-cp -rf ../immortalwrt/package/utils/mhz ./package/utils/mhz
+cp -rf ../immortalwrt_23/package/utils/mhz ./package/utils/mhz
 # AutoReboot
 cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./feeds/luci/applications/luci-app-autoreboot
 ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
