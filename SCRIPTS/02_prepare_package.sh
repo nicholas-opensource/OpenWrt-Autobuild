@@ -43,6 +43,8 @@ cp -rf ../immortalwrt/package/network/utils/nftables ./package/network/utils/nft
 patch -p1 <../PATCH/firewall/luci-app-firewall_add_fullcone.patch
 # FullCone modules
 git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone package/new/nft-fullcone
+# Remove obsolete options
+sed -i 's/syn_flood/synflood_protect/g' package/network/config/firewall/files/firewall.config
 
 ## Change x86 & rockchip target and u-boot
 rm -rf ./target/linux/rockchip
@@ -77,7 +79,8 @@ sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-pc.cf
 # AutoCore
 cp -rf ../immortalwrt/package/emortal/autocore ./package/new/autocore
 sed -i 's/"getTempInfo" /"getTempInfo", "getCPUBench", "getCPUUsage" /g' package/new/autocore/files/luci-mod-status-autocore.json
-sed -i '/"$threads"/d' package/new/autocore/files/autocore
+rm -rf ./package/new/autocore/files/autocore
+wget https://raw.githubusercontent.com/QiuSimons/OpenWrt-Add/master/autocore/files/x86/autocore -O package/new/autocore/files/autocore
 rm -rf ./feeds/luci/modules/luci-base
 cp -rf ../immortalwrt_luci/modules/luci-base ./feeds/luci/modules/luci-base
 sed -i "s,(br-lan),,g" feeds/luci/modules/luci-base/root/usr/share/rpcd/ucode/luci

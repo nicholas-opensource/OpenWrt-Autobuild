@@ -47,6 +47,9 @@ uci commit firewall
 sed -i '/log-facility/d' /etc/dnsmasq.conf
 echo "log-facility=/dev/null" >> /etc/dnsmasq.conf
 
+#Dae
+[ -f '/etc/dae/config.dae' ] && chmod 600 /etc/dae/config.dae
+
 #Others
 [ ! -f '/usr/bin/ip' ] && [ -f '/sbin/ip' ] && ln -sf /sbin/ip /usr/bin/ip
 [ ! -f '/usr/bin/wget-ssl' ] && [ -f '/usr/bin/wget' ] && ln -sf /usr/bin/wget /usr/bin/wget-ssl
