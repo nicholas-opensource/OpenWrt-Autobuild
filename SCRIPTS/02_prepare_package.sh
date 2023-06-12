@@ -12,12 +12,6 @@ sed -i "s/enabled '0'/enabled '1'/g" feeds/packages/utils/irqbalance/files/irqba
 sed -i 's,-SNAPSHOT,,g' include/version.mk
 sed -i 's,-SNAPSHOT,,g' package/base-files/image-config.in
 # Victoria's secret
-rm -rf ./scripts/download.pl
-rm -rf ./include/download.mk
-cp -rf ../immortalwrt/scripts/download.pl ./scripts/download.pl
-cp -rf ../immortalwrt/include/download.mk ./include/download.mk
-sed -i '/unshift/d' scripts/download.pl
-sed -i '/mirror02/d' scripts/download.pl
 echo "net.netfilter.nf_conntrack_helper = 1" >>./package/kernel/linux/files/sysctl-nf-conntrack.conf
 sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lang/node/Makefile
 
