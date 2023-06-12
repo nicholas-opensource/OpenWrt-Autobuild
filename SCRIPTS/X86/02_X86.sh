@@ -28,7 +28,7 @@ CONFIG_SMP=y
 
 # Match Vermagic
 latest_release="$(curl -s https://github.com/openwrt/openwrt/tags | grep -Eo "v[0-9\.]+\-*r*c*[0-9]*.tar.gz" | sed -n '/[2-9][3-9]/p' | sed -n 1p | sed 's/.tar.gz//g' | sed 's/v//g')"
-wget https://downloads.openwrt.org/releases/${latest_version}/targets/x86/64/packages/Packages.gz
+wget https://downloads.openwrt.org/releases/${latest_release}/targets/x86/64/packages/Packages.gz
 zgrep -m 1 "Depends: kernel (=.*)$" Packages.gz | sed -e 's/.*-\(.*\))/\1/' >.vermagic
 sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
 
