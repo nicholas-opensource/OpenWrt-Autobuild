@@ -1,5 +1,10 @@
 
-# Enjoy the honeymoon, stop updating until August 12th
+# The honeymoon is over, but...
+
+  * Wasted too much time playing Tears of the Kingdom, maybe Ganondorf was killed around the 16th of August, so I'll be updating the repository at that time~  
+  * 愿可盖大人荣光永存！  
+
+![zelda](https://i.redd.it/totk-lets-be-honest-link-would-have-spoilers-on-day-one-v0-ruxcfjuzxm3b1.jpg?s=900bbf90aa557af0ce47b5e3481223b52c7907e5)
 
 ## Notice
 
