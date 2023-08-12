@@ -43,24 +43,13 @@ sed -i 's/syn_flood/synflood_protect/g' package/network/config/firewall/files/fi
 ## Change x86 & rockchip target and u-boot
 rm -rf ./target/linux/rockchip
 cp -rf ../immortalwrt_23/target/linux/rockchip ./target/linux/rockchip
-#rm -rf ./target/linux/rockchip/Makefile
-#cp -rf ../openwrt_release/target/linux/rockchip/Makefile ./target/linux/rockchip/Makefile
-#rm -rf ./target/linux/rockchip/armv8/config-5.15
-#cp -rf ../openwrt_release/target/linux/rockchip/armv8/config-5.15 ./target/linux/rockchip/armv8/config-5.15
 cp -rf ../PATCH/rockchip-5.15/* ./target/linux/rockchip/patches-5.15/
 rm -rf ./package/boot/uboot-rockchip
 cp -rf ../immortalwrt_23/package/boot/uboot-rockchip ./package/boot/uboot-rockchip
 rm -rf ./package/boot/arm-trusted-firmware-rockchip
 cp -rf ../immortalwrt_23/package/boot/arm-trusted-firmware-rockchip ./package/boot/arm-trusted-firmware-rockchip
-rm -rf ./package/kernel/linux/modules/video.mk
-cp -rf ../lede/package/kernel/linux/modules/video.mk ./package/kernel/linux/modules/video.mk
-sed -i '/nouveau\.ko/d' package/kernel/linux/modules/video.mk
-rm -rf ./package/firmware/linux-firmware/intel.mk
-cp -rf ../lede/package/firmware/linux-firmware/intel.mk ./package/firmware/linux-firmware/intel.mk
-rm -rf ./package/firmware/linux-firmware/Makefile
-cp -rf ../lede/package/firmware/linux-firmware/Makefile ./package/firmware/linux-firmware/Makefile
 wget -qO - https://github.com/openwrt/openwrt/commit/c21a3570.patch | patch -p1
-cp -rf ../lede/target/linux/x86/64/config-5.15 ./target/linux/x86/64/config-5.15
+sed -i '/I915/d' target/linux/x86/64/config-5.15
 # Disable mitigations
 sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/mmc.bootscript
 sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/nanopi-r2s.bootscript
@@ -84,6 +73,7 @@ rm -rf ./feeds/luci/modules/luci-mod-status
 cp -rf ../immortalwrt_luci_23/modules/luci-mod-status ./feeds/luci/modules/luci-mod-status
 rm -rf ./feeds/packages/utils/coremark
 cp -rf ../immortalwrt_pkg/utils/coremark ./feeds/packages/utils/coremark
+sed -i "s,-O3,-Ofast -funroll-loops -fpeel-loops -fgcse-sm -fgcse-las,g" feeds/packages/utils/coremark/Makefile
 cp -rf ../immortalwrt_23/package/utils/mhz ./package/utils/mhz
 # AutoReboot
 cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./feeds/luci/applications/luci-app-autoreboot
@@ -91,12 +81,21 @@ ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci
 # Dae ready
 cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
-wget https://github.com/immortalwrt/immortalwrt/raw/openwrt-23.05/package/kernel/linux/modules/netsupport.mk -O package/kernel/linux/modules/netsupport.mk
+cp -rf ../immortalwrt_pkg/net/daed ./feeds/packages/net/daed
+ln -sf ../../../feeds/packages/net/daed ./package/feeds/packages/daed
+git clone -b master --depth 1 https://github.com/QiuSimons/luci-app-daed package/new/luci-app-daed
+rm -rf ./feeds/packages/net/v2ray-geodata
+cp -rf ../mosdns/v2ray-geodata ./package/new/v2ray-geodata
+wget -qO - https://github.com/openwrt/openwrt/commit/47ea58b.patch | patch -p1
+wget -qO - https://github.com/openwrt/openwrt/commit/ce3082d.patch | patch -p1
 wget https://github.com/immortalwrt/immortalwrt/raw/openwrt-23.05/target/linux/generic/hack-5.15/901-debloat_sock_diag.patch -O target/linux/generic/hack-5.15/901-debloat_sock_diag.patch
+wget -qO - https://github.com/immortalwrt/immortalwrt/commit/73e5679.patch | patch -p1
+wget https://github.com/immortalwrt/immortalwrt/raw/openwrt-23.05/target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch -O target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch
 pushd feeds/packages
-wget -qO - https://github.com/openwrt/packages/commit/7a64a5f4.patch | patch -p1
+patch -p1 <../../../PATCH/cgroupfs-mount/0001-fix-cgroupfs-mount.patch
 popd
-cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
+mkdir -p feeds/packages/utils/cgroupfs-mount/patches
+cp -rf ../PATCH/cgroupfs-mount/900-add-cgroupfs2.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 # Dae update
 sed -i '/zip/d;/HASH/d;/RELEASE:=/d' feeds/packages/net/dae/Makefile
 sed -i "/VERSION:/ s/$/-$(date +'%Y%m%d')/" feeds/packages/net/dae/Makefile
@@ -125,5 +124,4 @@ cp -f ../PATCH/script/fuck package/base-files/files/usr/bin/fuck
 wget -qO - https://github.com/openwrt/openwrt/commit/bbf39d07.patch | patch -p1
 # Remove config
 rm -rf .config
-cat ../SEED/extra.cfg >> ./target/linux/generic/config-5.15
 sed -i 's,CONFIG_WERROR=y,# CONFIG_WERROR is not set,g' target/linux/generic/config-5.15

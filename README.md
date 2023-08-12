@@ -1,11 +1,4 @@
 
-# The honeymoon is over, but...
-
-  * Wasted too much time playing Tears of the Kingdom, maybe Ganondorf was killed around the 16th of August, so I'll be updating the repository at that time~  
-  * 愿可盖大人荣光永存！  
-
-![zelda](https://i.redd.it/totk-lets-be-honest-link-would-have-spoilers-on-day-one-v0-ruxcfjuzxm3b1.jpg?s=900bbf90aa557af0ce47b5e3481223b52c7907e5)
-
 ## Notice
 
 This repository is based on [QiuSimons/YAOF](https://github.com/QiuSimons/YAOF).  
@@ -36,7 +29,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v23.05.0-rc1  
+OpenWrt official v23.05.0-rc2  
 
 ---
 ### Feature
@@ -50,24 +43,14 @@ OpenWrt official v23.05.0-rc1
 4.Opkg vermagic matched with OpenWrt manifest ( You can install the software as if you have AppStore~ )
 
 5.Add package [dae](https://github.com/daeuniverse/dae), a high performance eBPF transparent proxy client  
-Add command `updategeo` to download `geoip.dat` and `geosite.dat` and place them to the correct path for `dae`  
-* The init of dae has a problem temporarily and cannot run yet  
-* Run dae with command:  
 ```
-updategeo
-chmod 600 /etc/dae/config.dae
-dae run -c /etc/dae/config.dae
-```
-* Run dae with log output:  
-```
-dae run -c /etc/dae/config.dae &> /tmp/dae.log
-```
+6.Add [luci-app-daed](https://github.com/QiuSimons/luci-app-daed) to enable [daed](https://github.com/daeuniverse/daed), a modern dashboard for dae  
 
-6.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
+7.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
 
-7.Add support for phone USB hotspot sharing, both for Android and iPhone
+8.Add support for phone USB hotspot sharing, both for Android and iPhone
 
-8.Disable IPv6 by default
+9.Disable IPv6 by default
 
   * If you do need IPv6
 
@@ -80,6 +63,7 @@ uci set dhcp.@dnsmasq[0].rebind_protection='0'
 uci del dhcp.@dnsmasq[0].filteraaaa
 uci commit dhcp
 ```
+  * PS: HYBRID mode is never a good choice, please learn about [IPv6](https://www.cisco.com/en/US/docs/switches/lan/catalyst3850/software/release/3se/consolidated_guide/b_consolidated_3850_3se_cg_chapter_0101011.html). Also odhcpd on OpenWrt has serious bugs!  
 
 #### X86_64 Feature
 
