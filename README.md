@@ -43,7 +43,7 @@ OpenWrt official v23.05.0-rc2
 4.Opkg vermagic matched with OpenWrt manifest ( You can install the software as if you have AppStore~ )
 
 5.Add package [dae](https://github.com/daeuniverse/dae), a high performance eBPF transparent proxy client  
-```
+
 6.Add [luci-app-daed](https://github.com/QiuSimons/luci-app-daed) to enable [daed](https://github.com/daeuniverse/daed), a modern dashboard for dae  
 
 7.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
