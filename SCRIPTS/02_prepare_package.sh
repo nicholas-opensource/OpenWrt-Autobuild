@@ -29,6 +29,7 @@ cp -rf ../lede/target/linux/generic/hack-5.15/952-add-net-conntrack-events-suppo
 rm -rf ./package/network/config/firewall4
 cp -rf ../immortalwrt/package/network/config/firewall4 ./package/network/config/firewall4
 cp -f ../PATCH/firewall/990-unconditionally-allow-ct-status-dnat.patch ./package/network/config/firewall4/patches/990-unconditionally-allow-ct-status-dnat.patch
+cp -f ../PATCH/firewall/001-fix-fw4-flow-offload.patch ./package/network/config/firewall4/patches/001-fix-fw4-flow-offload.patch
 rm -rf ./package/libs/libnftnl
 cp -rf ../immortalwrt/package/libs/libnftnl ./package/libs/libnftnl
 rm -rf ./package/network/utils/nftables
@@ -102,8 +103,8 @@ sed -i '11i\PKG_SOURCE_URL:=https://github.com/daeuniverse/dae.git' feeds/packag
 sed -i "12i\PKG_SOURCE_VERSION:=$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4)" feeds/packages/net/dae/Makefile
 sed -i '13i\PKG_MIRROR_HASH:=skip' feeds/packages/net/dae/Makefile
 # Golang
-rm -rf ./feeds/packages/lang/golang
-cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
+#rm -rf ./feeds/packages/lang/golang
+#cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
 # NIC drivers update
 git clone https://github.com/sbwml/package_kernel_r8125 package/new/r8125
 cp -rf ../immortalwrt/package/kernel/r8152 ./package/new/r8152
