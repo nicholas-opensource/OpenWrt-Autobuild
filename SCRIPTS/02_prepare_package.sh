@@ -14,6 +14,7 @@ sed -i 's,-SNAPSHOT,,g' package/base-files/image-config.in
 # Victoria's secret
 echo "net.netfilter.nf_conntrack_helper = 1" >>./package/kernel/linux/files/sysctl-nf-conntrack.conf
 sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lang/node/Makefile
+patch -p1 <../PATCH/odhcp6c/1002-odhcp6c-support-dhcpv6-hotplug.patch
 
 ## Important Patches
 # ARM64: Add CPU model name in proc cpuinfo
@@ -26,20 +27,26 @@ wget -qO - https://github.com/coolsnowwolf/lede/commit/8a4db76.patch | patch -p1
 # Patch kernel to fix fullcone conflict
 cp -rf ../lede/target/linux/generic/hack-5.15/952-add-net-conntrack-events-support-multiple-registrant.patch ./target/linux/generic/hack-5.15/952-add-net-conntrack-events-support-multiple-registrant.patch
 # Patch firewall to enable fullcone
-rm -rf ./package/network/config/firewall4
-cp -rf ../immortalwrt/package/network/config/firewall4 ./package/network/config/firewall4
-cp -f ../PATCH/firewall/990-unconditionally-allow-ct-status-dnat.patch ./package/network/config/firewall4/patches/990-unconditionally-allow-ct-status-dnat.patch
+mkdir -p package/network/config/firewall4/patches
 cp -f ../PATCH/firewall/001-fix-fw4-flow-offload.patch ./package/network/config/firewall4/patches/001-fix-fw4-flow-offload.patch
-rm -rf ./package/libs/libnftnl
-cp -rf ../immortalwrt/package/libs/libnftnl ./package/libs/libnftnl
-rm -rf ./package/network/utils/nftables
-cp -rf ../immortalwrt/package/network/utils/nftables ./package/network/utils/nftables
+cp -f ../PATCH/firewall/990-unconditionally-allow-ct-status-dnat.patch ./package/network/config/firewall4/patches/990-unconditionally-allow-ct-status-dnat.patch
+cp -f ../PATCH/firewall/999-01-firewall4-add-fullcone-support.patch ./package/network/config/firewall4/patches/999-01-firewall4-add-fullcone-support.patch
+mkdir -p package/libs/libnftnl/patches
+cp -f ../PATCH/firewall/libnftnl/001-libnftnl-add-fullcone-expression-support.patch ./package/libs/libnftnl/patches/001-libnftnl-add-fullcone-expression-support.patch
+sed -i '/PKG_INSTALL:=/iPKG_FIXUP:=autoreconf' package/libs/libnftnl/Makefile
+mkdir -p package/network/utils/nftables/patches
+cp -f ../PATCH/firewall/nftables/002-nftables-add-fullcone-expression-support.patch ./package/network/utils/nftables/patches/002-nftables-add-fullcone-expression-support.patch
 # Patch LuCI to add fullcone button
-patch -p1 <../PATCH/firewall/luci-app-firewall_add_fullcone.patch
+pushd feeds/luci
+patch -p1 <../../../PATCH/firewall/luci-app-firewall_add_fullcone_fw4.patch
+popd
 # FullCone modules
 git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone package/new/nft-fullcone
 # Remove obsolete options
 sed -i 's/syn_flood/synflood_protect/g' package/network/config/firewall/files/firewall.config
+# Netifd
+mkdir -p package/network/config/netifd/patches
+cp -f ../PATCH/netifd/100-system-linux-fix-autoneg-for-2.5G-5G-10G.patch ./package/network/config/netifd/patches/100-system-linux-fix-autoneg-for-2.5G-5G-10G.patch
 
 ## Change x86 & rockchip target and u-boot
 rm -rf ./target/linux/rockchip
@@ -94,7 +101,8 @@ pushd feeds/packages
 patch -p1 <../../../PATCH/cgroupfs-mount/0001-fix-cgroupfs-mount.patch
 popd
 mkdir -p feeds/packages/utils/cgroupfs-mount/patches
-cp -rf ../PATCH/cgroupfs-mount/900-add-cgroupfs2.patch ./feeds/packages/utils/cgroupfs-mount/patches/
+cp -rf ../PATCH/cgroupfs-mount/900-mount-cgroup-v2-hierarchy-to-sys-fs-cgroup-cgroup2.patch ./feeds/packages/utils/cgroupfs-mount/patches/
+cp -rf ../PATCH/cgroupfs-mount/901-fix-cgroupfs-umount.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 # Dae update
 sed -i '/zip/d;/HASH/d;/RELEASE:=/d' feeds/packages/net/dae/Makefile
 sed -i "/VERSION:/ s/$/-$(date +'%Y%m%d')/" feeds/packages/net/dae/Makefile
@@ -103,8 +111,8 @@ sed -i '11i\PKG_SOURCE_URL:=https://github.com/daeuniverse/dae.git' feeds/packag
 sed -i "12i\PKG_SOURCE_VERSION:=$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4)" feeds/packages/net/dae/Makefile
 sed -i '13i\PKG_MIRROR_HASH:=skip' feeds/packages/net/dae/Makefile
 # Golang
-#rm -rf ./feeds/packages/lang/golang
-#cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
+rm -rf ./feeds/packages/lang/golang
+cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
 # NIC drivers update
 git clone https://github.com/sbwml/package_kernel_r8125 package/new/r8125
 cp -rf ../immortalwrt/package/kernel/r8152 ./package/new/r8152
