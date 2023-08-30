@@ -44,6 +44,12 @@ popd
 git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone package/new/nft-fullcone
 # Remove obsolete options
 sed -i 's/syn_flood/synflood_protect/g' package/network/config/firewall/files/firewall.config
+# LRNG
+cp -rf ../PATCH/LRNG/* ./target/linux/generic/hack-5.15/
+echo '
+CONFIG_LRNG=y
+# CONFIG_RANDOM_DEFAULT_IMPL is not set
+' >>./target/linux/generic/config-5.15
 # Netifd
 mkdir -p package/network/config/netifd/patches
 cp -f ../PATCH/netifd/100-system-linux-fix-autoneg-for-2.5G-5G-10G.patch ./package/network/config/netifd/patches/100-system-linux-fix-autoneg-for-2.5G-5G-10G.patch
