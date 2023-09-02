@@ -44,6 +44,8 @@ popd
 git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone package/new/nft-fullcone
 # Remove obsolete options
 sed -i 's/syn_flood/synflood_protect/g' package/network/config/firewall/files/firewall.config
+# BBRv3
+cp -rf ../PATCH/BBRv3/kernel/* ./target/linux/generic/backport-5.15/
 # LRNG
 cp -rf ../PATCH/LRNG/* ./target/linux/generic/hack-5.15/
 echo '
