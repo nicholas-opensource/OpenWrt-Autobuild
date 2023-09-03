@@ -29,7 +29,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v23.05.0-rc2  
+OpenWrt official v23.05.0-rc3  
 
 ---
 ### Feature
@@ -44,13 +44,17 @@ OpenWrt official v23.05.0-rc2
 
 5.Add package [dae](https://github.com/daeuniverse/dae), a high performance eBPF transparent proxy client  
 
-6.Add [luci-app-daed](https://github.com/QiuSimons/luci-app-daed) to enable [daed](https://github.com/daeuniverse/daed), a modern dashboard for dae  
+6.Add `luci-app-daed` to enable [daed](https://github.com/daeuniverse/daed), a modern dashboard for dae  
 
-7.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
+7.Backport Google [BBRv3](https://www.phoronix.com/news/Google-BBRv3-Linux) TCP congestion control  
 
-8.Add support for phone USB hotspot sharing, both for Android and iPhone
+8.Backport [LRNG](https://www.chronox.de/lrng.html) ( Linux Random Number Generator )  
 
-9.Disable IPv6 by default
+9.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
+
+10.Add support for phone USB hotspot sharing, both for Android and iPhone
+
+11.Disable IPv6 by default
 
   * If you do need IPv6
 
@@ -71,7 +75,7 @@ uci commit dhcp
 ```
 Intel: e1000, e1000e, ixgbe, igb, igc, i40e
 Broadcom: tg3
-Realtek: r8125, r8169
+Realtek: r8125, r8169, r8152
 ```
 
 2.Modify kmod-igc ( Intel Foxville i225 / i226 ) rx / tx [ring buffer](https://fasterdata.es.net/host-tuning/linux/nic-tuning/) to 4096 to prevent the NIC from suddenly stop working  
