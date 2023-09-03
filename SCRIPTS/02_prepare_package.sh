@@ -97,9 +97,10 @@ cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
 cp -rf ../immortalwrt_pkg/net/daed ./feeds/packages/net/daed
 ln -sf ../../../feeds/packages/net/daed ./package/feeds/packages/daed
-git clone -b master --depth 1 https://github.com/QiuSimons/luci-app-daed package/new/luci-app-daed
-rm -rf ./feeds/packages/net/v2ray-geodata
-cp -rf ../mosdns/v2ray-geodata ./package/new/v2ray-geodata
+cp -rf ../immortalwrt_luci/applications/luci-app-daed ./feeds/luci/applications/luci-app-daed
+ln -sf ../../../feeds/luci/applications/luci-app-daed ./package/feeds/luci/luci-app-daed
+rm -rf ./feeds/packages/net/v2ray-geodata/Makefile
+wget https://raw.githubusercontent.com/QiuSimons/openwrt-mos/master/v2ray-geodata/Makefile -O feeds/packages/net/v2ray-geodata/Makefile
 wget -qO - https://github.com/immortalwrt/immortalwrt/commit/73e5679.patch | patch -p1
 wget https://github.com/immortalwrt/immortalwrt/raw/openwrt-23.05/target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch -O target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch
 pushd feeds/packages
