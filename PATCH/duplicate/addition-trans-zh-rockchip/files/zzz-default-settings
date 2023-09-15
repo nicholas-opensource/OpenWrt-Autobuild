@@ -30,6 +30,7 @@ uci delete dhcp.lan.ra
 uci delete dhcp.lan.ra_management
 uci delete dhcp.lan.dhcpv6
 uci delete dhcp.lan.ndp
+uci set dhcp.@dnsmasq[0].filter_aaaa=1
 uci commit dhcp
 
 #Packet Steering and Set Lan MTU

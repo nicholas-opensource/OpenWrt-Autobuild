@@ -64,7 +64,7 @@ uci set dhcp.lan.ndp='hybrid'
 uci set dhcp.lan.dhcpv6='hybrid'
 uci set dhcp.lan.ra_management='1'
 uci set dhcp.@dnsmasq[0].rebind_protection='0'
-uci del dhcp.@dnsmasq[0].filteraaaa
+uci set dhcp.@dnsmasq[0].filter_aaaa=0
 uci commit dhcp
 ```
   * PS: HYBRID mode is never a good choice, please learn about [IPv6](https://www.cisco.com/en/US/docs/switches/lan/catalyst3850/software/release/3se/consolidated_guide/b_consolidated_3850_3se_cg_chapter_0101011.html). Also odhcpd on OpenWrt has serious bugs!  
@@ -78,7 +78,7 @@ Broadcom: tg3
 Realtek: r8125, r8169, r8152
 ```
 
-2.Modify kmod-igc ( Intel Foxville i225 / i226 ) rx / tx [ring buffer](https://fasterdata.es.net/host-tuning/linux/nic-tuning/) to 4096 to prevent the NIC from suddenly stop working  
+2.Modify kmod-igc ( Intel Foxville i225 / i226 ) rx / tx ring buffer to 4096 to prevent the NIC from suddenly stop working  
 
 #### R2S Feature
 
