@@ -56,9 +56,6 @@ CONFIG_LRNG_JENT=y
 CONFIG_LRNG_CPU=y
 # CONFIG_LRNG_SCHED is not set
 ' >>./target/linux/generic/config-5.15
-# Netifd
-mkdir -p package/network/config/netifd/patches
-cp -f ../PATCH/netifd/100-system-linux-fix-autoneg-for-2.5G-5G-10G.patch ./package/network/config/netifd/patches/100-system-linux-fix-autoneg-for-2.5G-5G-10G.patch
 
 ## Change x86 & rockchip target and u-boot
 rm -rf ./target/linux/rockchip
