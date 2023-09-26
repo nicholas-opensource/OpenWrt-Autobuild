@@ -14,7 +14,6 @@ sed -i 's,-SNAPSHOT,,g' package/base-files/image-config.in
 # Victoria's secret
 echo "net.netfilter.nf_conntrack_helper = 1" >>./package/kernel/linux/files/sysctl-nf-conntrack.conf
 sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lang/node/Makefile
-patch -p1 <../PATCH/odhcp6c/1002-odhcp6c-support-dhcpv6-hotplug.patch
 
 ## Important Patches
 # ARM64: Add CPU model name in proc cpuinfo
@@ -42,6 +41,10 @@ patch -p1 <../../../PATCH/firewall/luci-app-firewall_add_fullcone_fw4.patch
 popd
 # FullCone modules
 git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone package/new/nft-fullcone
+# Odhcp
+patch -p1 <../PATCH/odhcp6c/1002-odhcp6c-support-dhcpv6-hotplug.patch
+mkdir -p package/network/services/odhcpd/patches
+cp -f ../PATCH/odhcpd/001-config-allow-configuring-limit-of-min-and-max-value.patch ./package/network/services/odhcpd/patches/001-config-allow-configuring-limit-of-min-and-max-value.patch
 # Remove obsolete options
 sed -i 's/syn_flood/synflood_protect/g' package/network/config/firewall/files/firewall.config
 # BBRv3
