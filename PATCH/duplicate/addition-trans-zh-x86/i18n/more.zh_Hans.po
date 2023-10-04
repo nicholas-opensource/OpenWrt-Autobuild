@@ -1072,5 +1072,8 @@ msgstr "启用所有 CPU 的数据包控制。 可能有助于或阻碍网络速
 msgid "Enable FullCone NAT"
 msgstr "启用 FullCone-NAT"
 
+msgid "Enable FullCone NAT6"
+msgstr "启用 FullCone-NAT6"
+
 msgid "Source Code"
 msgstr "源代码"
