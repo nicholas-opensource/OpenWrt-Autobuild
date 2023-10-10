@@ -6,8 +6,6 @@ clear
 sed -i 's/Os/O2/g' include/target.mk
 # Update feeds
 ./scripts/feeds update -a && ./scripts/feeds install -a
-# Irqbalance
-sed -i "s/enabled '0'/enabled '1'/g" feeds/packages/utils/irqbalance/files/irqbalance.config
 # Remove snapshot tags
 sed -i 's,-SNAPSHOT,,g' include/version.mk
 sed -i 's,-SNAPSHOT,,g' package/base-files/image-config.in
@@ -44,7 +42,7 @@ git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone packag
 # Odhcp
 patch -p1 <../PATCH/odhcp6c/1002-odhcp6c-support-dhcpv6-hotplug.patch
 mkdir -p package/network/services/odhcpd/patches
-cp -f ../PATCH/odhcpd/001-config-allow-configuring-limit-of-min-and-max-value.patch ./package/network/services/odhcpd/patches/001-config-allow-configuring-limit-of-min-and-max-value.patch
+cp -f ../PATCH/odhcpd/0001-config-allow-configuring-max-limit-for-preferred-and.patch ./package/network/services/odhcpd/patches/0001-config-allow-configuring-max-limit-for-preferred-and.patch
 # Remove obsolete options
 sed -i 's/syn_flood/synflood_protect/g' package/network/config/firewall/files/firewall.config
 # BBRv3
@@ -99,12 +97,6 @@ ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci
 # Dae ready
 cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
-cp -rf ../immortalwrt_pkg/net/daed ./feeds/packages/net/daed
-ln -sf ../../../feeds/packages/net/daed ./package/feeds/packages/daed
-cp -rf ../immortalwrt_luci/applications/luci-app-daed ./feeds/luci/applications/luci-app-daed
-ln -sf ../../../feeds/luci/applications/luci-app-daed ./package/feeds/luci/luci-app-daed
-rm -rf ./feeds/packages/net/v2ray-geodata/Makefile
-wget https://raw.githubusercontent.com/QiuSimons/openwrt-mos/master/v2ray-geodata/Makefile -O feeds/packages/net/v2ray-geodata/Makefile
 wget -qO - https://github.com/immortalwrt/immortalwrt/commit/73e5679.patch | patch -p1
 wget https://github.com/immortalwrt/immortalwrt/raw/openwrt-23.05/target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch -O target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch
 pushd feeds/packages

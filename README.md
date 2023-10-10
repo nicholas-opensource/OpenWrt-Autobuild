@@ -44,17 +44,15 @@ OpenWrt official v23.05.0-rc4
 
 5.Add package [dae](https://github.com/daeuniverse/dae), a high performance eBPF transparent proxy client  
 
-6.Add `luci-app-daed` to enable [daed](https://github.com/daeuniverse/daed), a modern dashboard for dae  
+6.Backport Google [BBRv3](https://www.phoronix.com/news/Google-BBRv3-Linux) TCP congestion control  
 
-7.Backport Google [BBRv3](https://www.phoronix.com/news/Google-BBRv3-Linux) TCP congestion control  
+7.Backport [LRNG](https://www.chronox.de/lrng.html) ( Linux Random Number Generator )  
 
-8.Backport [LRNG](https://www.chronox.de/lrng.html) ( Linux Random Number Generator )  
+8.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
 
-9.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
+9.Add support for phone USB hotspot sharing, both for Android and iPhone
 
-10.Add support for phone USB hotspot sharing, both for Android and iPhone
-
-11.Disable IPv6 by default
+10.Disable IPv6 by default
 
   * If you do need IPv6
 
@@ -68,7 +66,9 @@ uci set dhcp.@dnsmasq[0].filter_aaaa=0
 uci commit dhcp
 ```
   * PS: HYBRID mode is never a good choice, please learn about [IPv6](https://www.cisco.com/en/US/docs/switches/lan/catalyst3850/software/release/3se/consolidated_guide/b_consolidated_3850_3se_cg_chapter_0101011.html). Also odhcpd on OpenWrt has serious bugs!  
-  * Bug fixed: Add `dhcp.lan.max_preferred_lifetime` and `dhcp.lan.max_valid_lifetime`. And fixed `lan` IPv6 misbehaving when `wan` is getting IPv6-PD via PPPoE  
+  * Bug fixed: 
+    * Add `dhcp.lan.max_preferred_lifetime` and `dhcp.lan.max_valid_lifetime` ( Not in the LuCI )  
+    * Add scripts to fix `lan` IPv6 misbehaving when `wan` is getting IPv6-PD via PPPoE
 
 #### X86_64 Feature
 
