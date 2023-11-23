@@ -29,7 +29,7 @@ Password：None
 
 ### Version Informations
 
-OpenWrt official v23.05.0
+OpenWrt official v23.05.2
 
 ---
 ### Feature
