@@ -42,7 +42,10 @@ git clone --depth 1 https://github.com/fullcone-nat-nftables/nft-fullcone packag
 # Odhcp
 patch -p1 <../PATCH/odhcp6c/1002-odhcp6c-support-dhcpv6-hotplug.patch
 mkdir -p package/network/services/odhcpd/patches
-cp -f ../PATCH/odhcpd/0001-config-allow-configuring-max-limit-for-preferred-and.patch ./package/network/services/odhcpd/patches/0001-config-allow-configuring-max-limit-for-preferred-and.patch
+cp -f ../PATCH/odhcpd/0001-odhcpd-improve-RFC-9096-compliance.patch ./package/network/services/odhcpd/patches/0001-odhcpd-improve-RFC-9096-compliance.patch
+pushd feeds/luci
+wget -qO - https://github.com/openwrt/luci/commit/39e6514cee3ba60b0876ca00197d53a65ddc809a.patch | patch -p1
+popd
 # Remove obsolete options
 sed -i 's/syn_flood/synflood_protect/g' package/network/config/firewall/files/firewall.config
 # BBRv3

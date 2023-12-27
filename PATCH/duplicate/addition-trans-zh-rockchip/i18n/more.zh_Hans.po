@@ -1077,3 +1077,9 @@ msgstr "启用 FullCone-NAT6"
 
 msgid "Source Code"
 msgstr "源代码"
+
+msgid "Max preferred lifetime"
+msgstr "前缀优先时间上限"
+
+msgid "Max valid lifetime"
+msgstr "前缀有效时间上限"

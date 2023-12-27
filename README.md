@@ -67,7 +67,7 @@ uci commit dhcp
 ```
   * PS: HYBRID mode is never a good choice, please learn about [IPv6](https://www.cisco.com/en/US/docs/switches/lan/catalyst3850/software/release/3se/consolidated_guide/b_consolidated_3850_3se_cg_chapter_0101011.html). Also odhcpd on OpenWrt has serious bugs!  
   * Bug fixed: 
-    * Add `dhcp.lan.max_preferred_lifetime` and `dhcp.lan.max_valid_lifetime` ( Not in the LuCI )  
+    * Add `dhcp.lan.max_preferred_lifetime` and `dhcp.lan.max_valid_lifetime` with LuCI options  
     * Add scripts to fix `lan` IPv6 misbehaving when `wan` is getting IPv6-PD via PPPoE
 
 #### X86_64 Feature
