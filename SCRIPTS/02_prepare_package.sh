@@ -26,6 +26,7 @@ cp -rf ../lede/target/linux/generic/hack-5.15/952-add-net-conntrack-events-suppo
 # Patch firewall to enable fullcone
 mkdir -p package/network/config/firewall4/patches
 cp -f ../PATCH/firewall/001-fix-fw4-flow-offload.patch ./package/network/config/firewall4/patches/001-fix-fw4-flow-offload.patch
+cp -f ../PATCH/firewall/002-fw4-udp53_and_apns.patch ./package/network/config/firewall4/patches/002-fw4-udp53_and_apns.patch
 cp -f ../PATCH/firewall/990-unconditionally-allow-ct-status-dnat.patch ./package/network/config/firewall4/patches/990-unconditionally-allow-ct-status-dnat.patch
 cp -f ../PATCH/firewall/999-01-firewall4-add-fullcone-support.patch ./package/network/config/firewall4/patches/999-01-firewall4-add-fullcone-support.patch
 mkdir -p package/libs/libnftnl/patches
