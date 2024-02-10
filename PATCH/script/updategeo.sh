@@ -1,12 +1,12 @@
 #!/bin/sh
 
-geoip_url="https://ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
+geoip_url="https://mirror.ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat"
 geoip_path="/tmp/geoip.dat"
-geosite_url="https://ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
+geosite_url="https://mirror.ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat"
 geosite_path="/tmp/geosite.dat"
-geoip_hash_url="https://ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat.sha256sum"
+geoip_hash_url="https://mirror.ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat.sha256sum"
 geoip_hash_path="/tmp/geoip.dat.sha256sum"
-geosite_hash_url="https://ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat.sha256sum"
+geosite_hash_url="https://mirror.ghproxy.com/https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat.sha256sum"
 geosite_hash_path="/tmp/geosite.dat.sha256sum"
 
 echo -e "\033[33mStart Downloading...... It won't take long\033[0m"
