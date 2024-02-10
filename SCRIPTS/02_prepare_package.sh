@@ -112,13 +112,6 @@ mkdir -p feeds/packages/utils/cgroupfs-mount/patches
 cp -rf ../PATCH/cgroupfs-mount/900-mount-cgroup-v2-hierarchy-to-sys-fs-cgroup-cgroup2.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 cp -rf ../PATCH/cgroupfs-mount/901-fix-cgroupfs-umount.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
-# Dae update
-sed -i '/zip/d;/HASH/d;/RELEASE:=/d' feeds/packages/net/dae/Makefile
-sed -i "/VERSION:/ s/$/-$(date +'%Y%m%d')/" feeds/packages/net/dae/Makefile
-sed -i '10i\PKG_SOURCE_PROTO:=git' feeds/packages/net/dae/Makefile
-sed -i '11i\PKG_SOURCE_URL:=https://github.com/daeuniverse/dae.git' feeds/packages/net/dae/Makefile
-sed -i "12i\PKG_SOURCE_VERSION:=$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4)" feeds/packages/net/dae/Makefile
-sed -i '13i\PKG_MIRROR_HASH:=skip' feeds/packages/net/dae/Makefile
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
