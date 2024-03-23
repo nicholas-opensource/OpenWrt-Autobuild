@@ -26,7 +26,7 @@ cp -rf ../lede/target/linux/generic/hack-5.15/952-add-net-conntrack-events-suppo
 # Patch firewall to enable fullcone
 mkdir -p package/network/config/firewall4/patches
 cp -f ../PATCH/firewall/001-fix-fw4-flow-offload.patch ./package/network/config/firewall4/patches/001-fix-fw4-flow-offload.patch
-cp -f ../PATCH/firewall/002-fw4-udp53_and_apns.patch ./package/network/config/firewall4/patches/002-fw4-udp53_and_apns.patch
+cp -f ../PATCH/firewall/002-fw4-apns.patch ./package/network/config/firewall4/patches/002-fw4-apns.patch
 cp -f ../PATCH/firewall/990-unconditionally-allow-ct-status-dnat.patch ./package/network/config/firewall4/patches/990-unconditionally-allow-ct-status-dnat.patch
 cp -f ../PATCH/firewall/999-01-firewall4-add-fullcone-support.patch ./package/network/config/firewall4/patches/999-01-firewall4-add-fullcone-support.patch
 mkdir -p package/libs/libnftnl/patches
@@ -70,6 +70,7 @@ rm -rf ./package/boot/uboot-rockchip
 cp -rf ../immortalwrt_23/package/boot/uboot-rockchip ./package/boot/uboot-rockchip
 rm -rf ./package/boot/arm-trusted-firmware-rockchip
 cp -rf ../immortalwrt_23/package/boot/arm-trusted-firmware-rockchip ./package/boot/arm-trusted-firmware-rockchip
+sed -i '/REQUIRE_IMAGE_METADATA/d' target/linux/rockchip/armv8/base-files/lib/upgrade/platform.sh
 wget -qO - https://github.com/openwrt/openwrt/commit/c21a3570.patch | patch -p1
 sed -i '/I915/d' target/linux/x86/64/config-5.15
 # Disable mitigations
@@ -77,8 +78,6 @@ sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/mmc.b
 sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-efi.cfg
 sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-iso.cfg
 sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-pc.cfg
-# Temp changed
-wget -qO - https://github.com/immortalwrt/immortalwrt/commit/4e7e1e851ff3c9b9af9dda83d4a7baea83c8ebdf.patch | patch -Rp1
 
 ## Extra Packages
 # AutoCore
@@ -112,6 +111,13 @@ mkdir -p feeds/packages/utils/cgroupfs-mount/patches
 cp -rf ../PATCH/cgroupfs-mount/900-mount-cgroup-v2-hierarchy-to-sys-fs-cgroup-cgroup2.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 cp -rf ../PATCH/cgroupfs-mount/901-fix-cgroupfs-umount.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
+# Dae update
+sed -i '/zip/d;/HASH/d;/RELEASE:=/d' feeds/packages/net/dae/Makefile
+sed -i "/VERSION:/ s/$/-$(date +'%Y%m%d')/" feeds/packages/net/dae/Makefile
+sed -i '10i\PKG_SOURCE_PROTO:=git' feeds/packages/net/dae/Makefile
+sed -i '11i\PKG_SOURCE_URL:=https://github.com/daeuniverse/dae.git' feeds/packages/net/dae/Makefile
+sed -i "12i\PKG_SOURCE_VERSION:=$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4)" feeds/packages/net/dae/Makefile
+sed -i '13i\PKG_MIRROR_HASH:=skip' feeds/packages/net/dae/Makefile
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang

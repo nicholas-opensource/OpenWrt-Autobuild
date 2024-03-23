@@ -9,8 +9,8 @@
  	{
  		.procname	= "poolsize",
  		.maxlen		= sizeof(int),
-@@ -132,9 +132,3 @@ static struct ctl_table random_table[] =
- 	{ }
+@@ -131,9 +131,3 @@ static struct ctl_table random_table[] =
+ 	},
  };
  
 -static int __init random_sysctls_init(void)

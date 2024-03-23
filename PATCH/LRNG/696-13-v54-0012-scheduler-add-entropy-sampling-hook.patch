@@ -1,7 +1,7 @@
-From d1107f1a8aa98ce0e522724cb66f23a078a5149a Mon Sep 17 00:00:00 2001
+From 20088d8f89721d054d971eeb9f51ce89176a352a Mon Sep 17 00:00:00 2001
 From: Stephan Mueller <smueller@chronox.de>
 Date: Sun, 15 May 2022 16:39:02 +0200
-Subject: [PATCH v52 12/25] scheduler - add entropy sampling hook
+Subject: [PATCH v54 12/25] scheduler - add entropy sampling hook
 
 The scheduler can be used as a source of entropy. This requires the
 presence of a hook that invokes the entropy source implementation.
@@ -24,7 +24,7 @@ Signed-off-by: Stephan Mueller <smueller@chronox.de>
  #include <linux/highmem.h>
  #include <linux/hrtimer_api.h>
  #include <linux/ktime_api.h>
-@@ -3518,6 +3519,8 @@ ttwu_stat(struct task_struct *p, int cpu
+@@ -3522,6 +3523,8 @@ ttwu_stat(struct task_struct *p, int cpu
  {
  	struct rq *rq;
  

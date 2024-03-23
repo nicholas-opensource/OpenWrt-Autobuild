@@ -1,7 +1,7 @@
-From d13ba0e00c7a393a4da326282f16d19416b206c1 Mon Sep 17 00:00:00 2001
+From cfe74800406f877aae5dbd5a4fa3662100c51686 Mon Sep 17 00:00:00 2001
 From: Stephan Mueller <smueller@chronox.de>
 Date: Mon, 20 Feb 2023 22:22:25 +0100
-Subject: [PATCH v52 07/25] LRNG - add SP800-90A DRBG extension
+Subject: [PATCH v54 07/25] LRNG - add SP800-90A DRBG extension
 
 Using the LRNG switchable DRNG support, the SP800-90A DRBG extension is
 implemented.
