@@ -23,24 +23,24 @@ regarding the accuracy, adequacy, validity, reliability, availability, or comple
 ---
 ### Key Infomations
 
-Login IP：192.168.1.1 
+Login IP：192.168.1.1  
 
-Password：None
+Password：None  
 
 ### Version Informations
 
-OpenWrt official v23.05.2
+OpenWrt official v23.05.3  
 
 ---
 ### Feature
 
-1.Based on official OpenWrt
+1.Based on official OpenWrt  
 
-2.Only contain the most basic software for the stability
+2.Only contain the most basic software for the stability  
 
-3.Fullcone NAT supported
+3.Fullcone NAT supported  
 
-4.Opkg vermagic matched with OpenWrt manifest ( You can install the software as if you have AppStore~ )
+4.Opkg vermagic matched with OpenWrt manifest ( You can install the software as if you have AppStore~ )  
 
 5.Add package [dae](https://github.com/daeuniverse/dae), a high performance eBPF transparent proxy client  
 
@@ -50,11 +50,11 @@ OpenWrt official v23.05.2
 
 8.Update to firewall4, firewall3 no longer supported ( Huge improvements in performance )  
 
-9.Add support for phone USB hotspot sharing, both for Android and iPhone
+9.Add support for phone USB hotspot sharing, both for Android and iPhone  
 
-10.Disable IPv6 by default
+10.Disable IPv6 by default  
 
-  * If you do need IPv6
+  * If you do need IPv6  
 
 ```
 uci set dhcp.lan.ra='hybrid'
@@ -68,7 +68,7 @@ uci commit dhcp
   * PS: HYBRID mode is never a good choice, please learn about [IPv6](https://www.cisco.com/en/US/docs/switches/lan/catalyst3850/software/release/3se/consolidated_guide/b_consolidated_3850_3se_cg_chapter_0101011.html). Also odhcpd on OpenWrt has serious bugs!  
   * Bug fixed: 
     * Add `dhcp.lan.max_preferred_lifetime` and `dhcp.lan.max_valid_lifetime` with LuCI options  
-    * Add scripts to fix `lan` IPv6 misbehaving when `wan` is getting IPv6-PD via PPPoE
+    * Add scripts to fix `lan` IPv6 misbehaving when `wan` is getting IPv6-PD via PPPoE  
 
 #### X86_64 Feature
 
@@ -83,23 +83,23 @@ Realtek: r8125, r8169, r8152
 
 #### R2S Feature
 
-1.Fix DDR4 333MHz problem
+1.Fix DDR4 333MHz problem  
 
-2.Modify DTSI to support overclocked unstable devices as much as possible
+2.Modify DTSI to support overclocked unstable devices as much as possible  
 
-3.Remove frequencies below 800MHz (same voltage) for faster response
+3.Remove frequencies below 800MHz (same voltage) for faster response  
 
-4.Support TF card with a minimum size of 512MB
+4.Support TF card with a minimum size of 512MB  
 
 ![](/Screenshots/main.jpeg)
 
 #### R4S Feature
 
-1.Overclock to 2208MHz/1800MHz (big.LITTLE)
+1.Overclock to 2208MHz/1800MHz (big.LITTLE)  
 
-2.Remove thermal throttle limit (Default at 70°C)
+2.Remove thermal throttle limit (Default at 70°C)  
 
-3.Support TF card in 1.8V signalling, fix UHS card cannot boot in 3.3V mode
+3.Support TF card in 1.8V signalling, fix UHS card cannot boot in 3.3V mode  
 
 ---
 ## Thanks to everyone in ImmortalWrt and OpenWrt
