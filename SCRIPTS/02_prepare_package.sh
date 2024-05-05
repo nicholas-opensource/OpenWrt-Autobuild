@@ -23,6 +23,7 @@ cp -rf ../immortalwrt/target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model
 # Patches for SSL
 rm -rf ./package/libs/mbedtls
 cp -rf ../immortalwrt/package/libs/mbedtls ./package/libs/mbedtls
+cp -rf ../immortalwrt/package/libs/ustream-ssl/Makefile ./package/libs/ustream-ssl
 # Fix fstools
 wget -qO - https://github.com/coolsnowwolf/lede/commit/8a4db76.patch | patch -p1
 # Patch kernel to fix fullcone conflict
