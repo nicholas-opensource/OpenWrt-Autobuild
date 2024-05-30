@@ -12,13 +12,20 @@ sed -i 's,-SNAPSHOT,,g' package/base-files/image-config.in
 # Victoria's secret
 echo "net.netfilter.nf_conntrack_helper = 1" >>./package/kernel/linux/files/sysctl-nf-conntrack.conf
 sed -i 's/default NODEJS_ICU_SMALL/default NODEJS_ICU_NONE/g' feeds/packages/lang/node/Makefile
+# Bump firewall4 to the master branch
+rm -rf ./package/network/config/firewall4
+cp -rf ../openwrt_ma/package/network/config/firewall4 ./package/network/config/firewall4
 
 ## Important Patches
+# PPPoE offload
+wget https://github.com/openwrt/openwrt/raw/98834a4c3f81c6e4f20329ff266f9bd85731d114/target/linux/generic/backport-5.15/741-v6.9-01-netfilter-flowtable-validate-pppoe-header.patch -O target/linux/generic/backport-5.15/741-v6.9-01-netfilter-flowtable-validate-pppoe-header.patch
+wget https://github.com/openwrt/openwrt/raw/98834a4c3f81c6e4f20329ff266f9bd85731d114/target/linux/generic/backport-5.15/741-v6.9-02-netfilter-flowtable-incorrect-pppoe-tuple.patch -O target/linux/generic/backport-5.15/741-v6.9-02-netfilter-flowtable-incorrect-pppoe-tuple.patch
+wget https://github.com/openwrt/openwrt/raw/98834a4c3f81c6e4f20329ff266f9bd85731d114/target/linux/generic/hack-5.15/650-netfilter-add-xt_FLOWOFFLOAD-target.patch -O target/linux/generic/hack-5.15/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
 # ARM64: Add CPU model name in proc cpuinfo
 cp -rf ../immortalwrt/target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch ./target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # Patches for SSL
-rm -rf ./package/libs/mbedtls
-cp -rf ../immortalwrt/package/libs/mbedtls ./package/libs/mbedtls
+#rm -rf ./package/libs/mbedtls
+#cp -rf ../immortalwrt/package/libs/mbedtls ./package/libs/mbedtls
 # Fix fstools
 wget -qO - https://github.com/coolsnowwolf/lede/commit/8a4db76.patch | patch -p1
 # Patch kernel to fix fullcone conflict
@@ -71,7 +78,6 @@ cp -rf ../immortalwrt_23/package/boot/uboot-rockchip ./package/boot/uboot-rockch
 rm -rf ./package/boot/arm-trusted-firmware-rockchip
 cp -rf ../immortalwrt_23/package/boot/arm-trusted-firmware-rockchip ./package/boot/arm-trusted-firmware-rockchip
 sed -i '/REQUIRE_IMAGE_METADATA/d' target/linux/rockchip/armv8/base-files/lib/upgrade/platform.sh
-sed -i '/^define Device\/friendlyarm_nanopi-.*$/,/^endef/ s/kmod-usb-net-rtl8152/kmod-usb-net-rtl8152-vendor/' target/linux/rockchip/image/armv8.mk
 wget -qO - https://github.com/openwrt/openwrt/commit/c21a3570.patch | patch -p1
 sed -i '/I915/d' target/linux/x86/64/config-5.15
 # Disable mitigations
@@ -120,8 +126,7 @@ sed -i "s,b5ebd4f8cb82c5a0b44a49b53f3e9df4f01419c8,$(curl -s https://api.github.
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
 # NIC drivers update
-git clone https://github.com/sbwml/package_kernel_r8125 package/new/r8125
-#cp -rf ../immortalwrt/package/kernel/r8152 ./package/new/r8152
+cp -rf ../immortalwrt/package/kernel/r8152 ./package/new/r8152
 git clone https://github.com/sbwml/package_kernel_r8152 package/new/r8152
 git clone -b master --depth 1 https://github.com/BROBIRD/openwrt-r8168.git package/new/r8168
 patch -p1 <../PATCH/r8168/r8168-fix_LAN_led-for_r4s-from_TL.patch
