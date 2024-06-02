@@ -17,6 +17,8 @@ rm -rf ./package/network/config/firewall4
 cp -rf ../openwrt_ma/package/network/config/firewall4 ./package/network/config/firewall4
 
 ## Important Patches
+# Temp fix libpfring
+wget -qO - https://github.com/SergeyFilippov/openwrt/commit/e66ca39.patch | patch -p1
 # PPPoE offload
 wget https://github.com/openwrt/openwrt/raw/98834a4c3f81c6e4f20329ff266f9bd85731d114/target/linux/generic/backport-5.15/741-v6.9-01-netfilter-flowtable-validate-pppoe-header.patch -O target/linux/generic/backport-5.15/741-v6.9-01-netfilter-flowtable-validate-pppoe-header.patch
 wget https://github.com/openwrt/openwrt/raw/98834a4c3f81c6e4f20329ff266f9bd85731d114/target/linux/generic/backport-5.15/741-v6.9-02-netfilter-flowtable-incorrect-pppoe-tuple.patch -O target/linux/generic/backport-5.15/741-v6.9-02-netfilter-flowtable-incorrect-pppoe-tuple.patch
