@@ -17,12 +17,6 @@ rm -rf ./package/network/config/firewall4
 cp -rf ../openwrt_ma/package/network/config/firewall4 ./package/network/config/firewall4
 
 ## Important Patches
-# Temp fix libpfring
-wget -qO - https://github.com/SergeyFilippov/openwrt/commit/e66ca39.patch | patch -p1
-# PPPoE offload
-wget https://github.com/openwrt/openwrt/raw/98834a4c3f81c6e4f20329ff266f9bd85731d114/target/linux/generic/backport-5.15/741-v6.9-01-netfilter-flowtable-validate-pppoe-header.patch -O target/linux/generic/backport-5.15/741-v6.9-01-netfilter-flowtable-validate-pppoe-header.patch
-wget https://github.com/openwrt/openwrt/raw/98834a4c3f81c6e4f20329ff266f9bd85731d114/target/linux/generic/backport-5.15/741-v6.9-02-netfilter-flowtable-incorrect-pppoe-tuple.patch -O target/linux/generic/backport-5.15/741-v6.9-02-netfilter-flowtable-incorrect-pppoe-tuple.patch
-wget https://github.com/openwrt/openwrt/raw/98834a4c3f81c6e4f20329ff266f9bd85731d114/target/linux/generic/hack-5.15/650-netfilter-add-xt_FLOWOFFLOAD-target.patch -O target/linux/generic/hack-5.15/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
 # ARM64: Add CPU model name in proc cpuinfo
 cp -rf ../immortalwrt/target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch ./target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # Patches for SSL
@@ -121,6 +115,7 @@ mkdir -p feeds/packages/utils/cgroupfs-mount/patches
 cp -rf ../PATCH/cgroupfs-mount/900-mount-cgroup-v2-hierarchy-to-sys-fs-cgroup-cgroup2.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 cp -rf ../PATCH/cgroupfs-mount/901-fix-cgroupfs-umount.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
+cp -f ../PATCH/bpf_loop/*.patch ./target/linux/generic/backport-5.15/
 # Dae update
 sed -i "s,0.6.0rc2,$(curl -s "https://api.github.com/repos/daeuniverse/dae/releases" | grep -m 1 -oP '"tag_name": "\K(.*?)(?=")' | cut -d '"' -f 4)-$(date +'%Y%m%d'),g" feeds/packages/net/dae/Makefile
 sed -i "s,b5ebd4f8cb82c5a0b44a49b53f3e9df4f01419c8,$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4),g" feeds/packages/net/dae/Makefile

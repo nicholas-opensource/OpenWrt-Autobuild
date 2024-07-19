@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.event.repository.owner.id == github.event.sender.id
     
     steps:
@@ -39,14 +39,11 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        sudo swapoff -a
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -qq update
-        sudo -E apt-get -qq install aria2
-        sudo -E wget -P /usr/local/sbin/ https://github.com/HiGarfield/lede-17.01.4-Mod/raw/master/.github/backup/apt-fast
-        sudo -E chmod -R 755 /usr/local/sbin/apt-fast
-        sudo -E apt-fast -y -qq install dwarves llvm clang lldb lld build-essential rsync asciidoc binutils bzip2 gawk gettext git libncurses5-dev patch python2.7 unzip zlib1g-dev lib32gcc-s1 libc6-dev-i386 subversion flex uglifyjs gcc-multilib p7zip-full msmtp libssl-dev texinfo libreadline-dev libglib2.0-dev xmlto qemu-utils upx-ucl libelf-dev autoconf automake libtool autopoint device-tree-compiler g++-multilib antlr3 gperf wget ccache curl swig coreutils vim nano python3 python3-dev python3-pip python3-ply python3-pyelftools lrzsz scons
-        pip3 install --user -U pylibfdt
+        sudo /bin/bash -c "$(curl -sL https://git.io/vokNn)"
+        sudo -E apt-fast -y -qq install asciidoc bash bcc bin86 binutils bison bzip2 clang file flex g++ g++-multilib gawk gcc gcc-multilib gettext git gzip help2man intltool libboost-dev libelf-dev libncurses-dev libncurses5-dev libssl-dev libthread-queue-any-perl libusb-dev libxml-parser-perl make patch perl-modules python3-dev python3-pip python3-pyelftools python3-setuptools rsync sharutils swig time unzip util-linux wget xsltproc zlib1g-dev zip
+        sudo -E apt-fast -y -qq install dos2unix dwarves quilt
+        pip3 install --user -U pylibfdt --break-system-packages
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
         sudo -E git config --global user.name 'GitHub Actions' && git config --global user.email 'noreply@github.com'
@@ -59,26 +56,31 @@ jobs:
         cp -r ./SCRIPTS/. ./
         /bin/bash 01_get_ready.sh
     - name: Prepare Package
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt
         cp -r ../SCRIPTS/. ./
         /bin/bash 02_prepare_package.sh
         /bin/bash 02_X86.sh
     - name: Convert Translation
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt
         /bin/bash 03_convert_translation.sh
     - name: Remove Upx
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt
         /bin/bash 04_remove_upx.sh
     - name: Add ACL
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt
         /bin/bash 05_create_acl_for_luci.sh -a
-    - name: Make Config
+    - name: Fix Permissions
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt
+        sudo -E chmod -R 755 ./08_fix_permissions.sh
+        /bin/bash 08_fix_permissions.sh
+    - name: Make Config
+      working-directory: ${{ github.workspace }}/openwrt
+      run: |
         mv ../SEED/X86/config.seed .config
         make defconfig
     - name: Smart chmod
@@ -91,20 +93,21 @@ jobs:
         rm -f ${MY_Filter}
         unset MY_Filter
     - name: Make Download
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt
         make download -j48
     - name: Make Toolchain
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt
         IGNORE_ERRORS=1 make toolchain/install -j$(($(nproc) + 1)) V=s
     - name: Compile Openwrt
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt
         IGNORE_ERRORS=1 make -j$(($(nproc) + 1)) V=s
     - name: Cleaning
+      working-directory: ${{ github.workspace }}/openwrt
       run: |
-        cd openwrt/bin/targets/x86/64
+        cd bin/targets/x86/64
         /bin/bash ../../../../../SCRIPTS/06_cleaning.sh
     - name: Print Disk Space After
       run: df -h
