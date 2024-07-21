@@ -103,8 +103,7 @@ cp -rf ../immortalwrt_23/package/utils/mhz ./package/utils/mhz
 cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./feeds/luci/applications/luci-app-autoreboot
 ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
 # Dae ready
-#cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
-cp -rf ../PATCH/dae ./feeds/packages/net/dae
+cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
 wget -qO - https://github.com/immortalwrt/immortalwrt/commit/73e5679.patch | patch -p1
 wget https://github.com/immortalwrt/immortalwrt/raw/openwrt-23.05/target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch -O target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch
@@ -117,8 +116,12 @@ cp -rf ../PATCH/cgroupfs-mount/901-fix-cgroupfs-umount.patch ./feeds/packages/ut
 cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
 cp -f ../PATCH/bpf_loop/*.patch ./target/linux/generic/backport-5.15/
 # Dae update
-sed -i "s,0.6.0rc2,$(curl -s "https://api.github.com/repos/daeuniverse/dae/releases" | grep -m 1 -oP '"tag_name": "\K(.*?)(?=")' | cut -d '"' -f 4)-$(date +'%Y%m%d'),g" feeds/packages/net/dae/Makefile
-sed -i "s,b5ebd4f8cb82c5a0b44a49b53f3e9df4f01419c8,$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4),g" feeds/packages/net/dae/Makefile
+sed -i '/zip/d;/HASH/d;/RELEASE:=/d' feeds/packages/net/dae/Makefile
+sed -i "/VERSION:/ s/$/-$(date +'%Y%m%d')/" feeds/packages/net/dae/Makefile
+sed -i '10i\PKG_SOURCE_PROTO:=git' feeds/packages/net/dae/Makefile
+sed -i '11i\PKG_SOURCE_URL:=https://github.com/daeuniverse/dae.git' feeds/packages/net/dae/Makefile
+sed -i "12i\PKG_SOURCE_VERSION:=$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4)" feeds/packages/net/dae/Makefile
+sed -i '13i\PKG_MIRROR_HASH:=skip' feeds/packages/net/dae/Makefile
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
