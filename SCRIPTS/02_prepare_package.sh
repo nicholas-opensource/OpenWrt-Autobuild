@@ -18,7 +18,7 @@ cp -rf ../openwrt_ma/package/network/config/firewall4 ./package/network/config/f
 
 ## Important Patches
 # ARM64: Add CPU model name in proc cpuinfo
-cp -rf ../immortalwrt/target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch ./target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
+cp -rf ../immortalwrt_23/target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch ./target/linux/generic/hack-5.15/312-arm64-cpuinfo-Add-model-name-in-proc-cpuinfo-for-64bit-ta.patch
 # Patches for SSL
 #rm -rf ./package/libs/mbedtls
 #cp -rf ../immortalwrt/package/libs/mbedtls ./package/libs/mbedtls
@@ -78,9 +78,9 @@ wget -qO - https://github.com/openwrt/openwrt/commit/c21a3570.patch | patch -p1
 sed -i '/I915/d' target/linux/x86/64/config-5.15
 # Disable mitigations
 sed -i 's,rootwait,rootwait mitigations=off,g' target/linux/rockchip/image/default.bootscript
-sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-efi.cfg
-sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-iso.cfg
-sed -i 's,noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-pc.cfg
+sed -i 's,@CMDLINE@ noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-efi.cfg
+sed -i 's,@CMDLINE@ noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-iso.cfg
+sed -i 's,@CMDLINE@ noinitrd,noinitrd mitigations=off,g' target/linux/x86/image/grub-pc.cfg
 
 ## Extra Packages
 # AutoCore
@@ -104,6 +104,9 @@ cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./feeds/luci/applica
 ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
 # Dae ready
 cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
+mkdir -p feeds/packages/net/dae/patches
+wget -q https://github.com/daeuniverse/dae/pull/580.patch -O feeds/packages/net/dae/patches/001-580.patch
+wget -q https://github.com/daeuniverse/dae/pull/649.patch -O feeds/packages/net/dae/patches/002-649.patch
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
 wget -qO - https://github.com/immortalwrt/immortalwrt/commit/73e5679.patch | patch -p1
 wget https://github.com/immortalwrt/immortalwrt/raw/openwrt-23.05/target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch -O target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch
@@ -116,12 +119,8 @@ cp -rf ../PATCH/cgroupfs-mount/901-fix-cgroupfs-umount.patch ./feeds/packages/ut
 cp -rf ../PATCH/script/updategeo.sh ./package/base-files/files/bin/updategeo
 cp -f ../PATCH/bpf_loop/*.patch ./target/linux/generic/backport-5.15/
 # Dae update
-sed -i '/zip/d;/HASH/d;/RELEASE:=/d' feeds/packages/net/dae/Makefile
-sed -i "/VERSION:/ s/$/-$(date +'%Y%m%d')/" feeds/packages/net/dae/Makefile
-sed -i '10i\PKG_SOURCE_PROTO:=git' feeds/packages/net/dae/Makefile
-sed -i '11i\PKG_SOURCE_URL:=https://github.com/daeuniverse/dae.git' feeds/packages/net/dae/Makefile
-sed -i "12i\PKG_SOURCE_VERSION:=$(curl -s https://api.github.com/repos/daeuniverse/dae/commits | grep '"sha"' | head -1 | cut -d '"' -f 4)" feeds/packages/net/dae/Makefile
-sed -i '13i\PKG_MIRROR_HASH:=skip' feeds/packages/net/dae/Makefile
+sed -i 's/0.7.4/0.8.0rc2/g' feeds/packages/net/dae/Makefile
+sed -i "s/a6d04ceb698e1e6595e14ac51ac56503abd9d7d91790850937dcd1d470364b88/007e712bb1c21199dc748e052e0e175a4a16a576e7327d18c7a4d79c2e32722f/g" feeds/packages/net/dae/Makefile
 # Golang
 rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
