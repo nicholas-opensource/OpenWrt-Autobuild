@@ -1,0 +1,1589 @@
+From 8d3cfcac449a2e561eec3217cee3a9ab0da7e8dc Mon Sep 17 00:00:00 2001
+From: mzz2017 <2017@duck.com>
+Date: Thu, 18 Jul 2024 02:45:24 +0800
+Subject: [PATCH 01/12] refactor/optimize: rework route with bpf_loop
+
+---
+ .github/workflows/kernel-test.yml |   2 +-
+ Makefile                          |   2 +-
+ common/consts/ebpf.go             |   3 +-
+ control/control_plane.go          |   8 +
+ control/kern/tproxy.c             | 749 ++++++++++++++++--------------
+ docs/en/README.md                 |  10 +-
+ docs/zh/README.md                 |  10 +-
+ go.mod                            |  84 ++--
+ go.sum                            | 185 ++++----
+ hack/mock/insert.sh               |   4 +-
+ 10 files changed, 562 insertions(+), 495 deletions(-)
+
+diff --git a/.github/workflows/kernel-test.yml b/.github/workflows/kernel-test.yml
+index b1181d9..c851790 100644
+--- a/.github/workflows/kernel-test.yml
++++ b/.github/workflows/kernel-test.yml
+@@ -43,7 +43,7 @@ jobs:
+     strategy:
+       fail-fast: false
+       matrix:
+-        kernel: [ '5.15-20240305.092417', '6.1-20240305.092417', '6.6-20240305.092417' ]
++        kernel: [ '6.1-20240305.092417', '6.6-20240305.092417' ]
+     timeout-minutes: 10
+     steps:
+       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+diff --git a/Makefile b/Makefile
+index 25ab350..06ecc70 100644
+--- a/Makefile
++++ b/Makefile
+@@ -11,7 +11,7 @@ STRIP ?= llvm-strip
+ CFLAGS := -O2 -Wall -Werror $(CFLAGS)
+ TARGET ?= bpfel,bpfeb
+ OUTPUT ?= dae
+-MAX_MATCH_SET_LEN ?= 64
++MAX_MATCH_SET_LEN ?= 1024
+ CFLAGS := -DMAX_MATCH_SET_LEN=$(MAX_MATCH_SET_LEN) $(CFLAGS)
+ NOSTRIP ?= n
+ STRIP_PATH := $(shell command -v $(STRIP) 2>/dev/null)
+diff --git a/common/consts/ebpf.go b/common/consts/ebpf.go
+index fd44151..8343aba 100644
+--- a/common/consts/ebpf.go
++++ b/common/consts/ebpf.go
+@@ -102,7 +102,7 @@ func (i OutboundIndex) IsReserved() bool {
+ 
+ var (
+ 	MaxMatchSetLen_ = ""
+-	MaxMatchSetLen  = 32 * 2
++	MaxMatchSetLen  = 32 * 32
+ )
+ 
+ func init() {
+@@ -157,6 +157,7 @@ var (
+ 	UserspaceBatchUpdateLpmTrieFeatureVersion = internal.Version{5, 13, 0}
+ 	BpfTimerFeatureVersion                    = internal.Version{5, 15, 0}
+ 	HelperBpfGetFuncIpVersionFeatureVersion   = internal.Version{5, 15, 0}
++	BpfLoopFeatureVersion                     = internal.Version{5, 17, 0}
+ )
+ 
+ const (
+diff --git a/control/control_plane.go b/control/control_plane.go
+index 5da9691..1ffdc39 100644
+--- a/control/control_plane.go
++++ b/control/control_plane.go
+@@ -21,6 +21,8 @@ import (
+ 
+ 	"github.com/bits-and-blooms/bloom/v3"
+ 	"github.com/cilium/ebpf"
++	"github.com/cilium/ebpf/asm"
++	"github.com/cilium/ebpf/features"
+ 	"github.com/cilium/ebpf/rlimit"
+ 	"github.com/daeuniverse/dae/common"
+ 	"github.com/daeuniverse/dae/common/assets"
+@@ -101,6 +103,12 @@ func NewControlPlane(
+ 	}
+ 	/// Check linux kernel requirements.
+ 	// Check version from high to low to reduce the number of user upgrading kernel.
++	if err := features.HaveProgramHelper(ebpf.SchedCLS, asm.FnLoop); err != nil {
++		return nil, fmt.Errorf("%w: your kernel version %v does not support bpf_loop (needed by routing); expect >=%v; upgrade your kernel and try again",
++			err,
++			kernelVersion.String(),
++			consts.BpfLoopFeatureVersion.String())
++	}
+ 	if requirement := consts.ChecksumFeatureVersion; kernelVersion.Less(requirement) {
+ 		return nil, fmt.Errorf("your kernel version %v does not support checksum related features; expect >=%v; upgrade your kernel and try again",
+ 			kernelVersion.String(),
+diff --git a/control/kern/tproxy.c b/control/kern/tproxy.c
+index 370e4f1..b0646ed 100644
+--- a/control/kern/tproxy.c
++++ b/control/kern/tproxy.c
+@@ -49,7 +49,8 @@
+ #define MAX_PARAM_LEN 16
+ #define MAX_INTERFACE_NUM 256
+ #ifndef MAX_MATCH_SET_LEN
+-#define MAX_MATCH_SET_LEN (32 * 2) // Should be sync with common/consts/ebpf.go.
++#define MAX_MATCH_SET_LEN \
++	(32 * 32) // Should be sync with common/consts/ebpf.go.
+ #endif
+ #define MAX_LPM_SIZE 2048000
+ #define MAX_LPM_NUM (MAX_MATCH_SET_LEN + 8)
+@@ -57,8 +58,7 @@
+ #define MAX_TGID_PNAME_MAPPING_NUM (8192)
+ #define MAX_COOKIE_PID_PNAME_MAPPING_NUM (65536)
+ #define MAX_DOMAIN_ROUTING_NUM 65536
+-#define MAX_ARG_LEN_TO_PROBE 128
+-#define MAX_ARG_SCANNER_BUFFER_SIZE (TASK_COMM_LEN * 4)
++#define MAX_ARG_LEN 128
+ #define IPV6_MAX_EXTENSIONS 4
+ 
+ #define OUTBOUND_DIRECT 0
+@@ -222,30 +222,6 @@ struct {
+ 	// __uint(pinning, LIBBPF_PIN_BY_NAME);
+ } linklen_map SEC(".maps");
+ 
+-// LPM key:
+-struct {
+-	__uint(type, BPF_MAP_TYPE_PERCPU_HASH);
+-	__type(key, __u32);
+-	__type(value, struct lpm_key);
+-	__uint(max_entries, 3);
+-} lpm_key_map SEC(".maps");
+-
+-// h_sport, h_dport:
+-struct {
+-	__uint(type, BPF_MAP_TYPE_PERCPU_HASH);
+-	__type(key, __u32);
+-	__type(value, __u16);
+-	__uint(max_entries, 2);
+-} h_port_map SEC(".maps");
+-
+-// l4proto, ipversion:
+-struct {
+-	__uint(type, BPF_MAP_TYPE_PERCPU_HASH);
+-	__type(key, __u32);
+-	__type(value, __u32);
+-	__uint(max_entries, 2);
+-} l4proto_ipversion_map SEC(".maps");
+-
+ // Interface Ips:
+ struct if_params {
+ 	bool rx_cksm_offload;
+@@ -635,266 +611,305 @@ parse_transport(const struct __sk_buff *skb, __u32 link_h_len,
+ 	}
+ }
+ 
+-// Do not use __always_inline here because this function is too heavy.
+-// low -> high: outbound(8b) mark(32b) unused(23b) sign(1b)
+-static __s64 __attribute__((noinline))
+-route(const __u32 flag[8], const void *l4hdr, const __be32 saddr[4],
+-      const __be32 daddr[4], const __be32 mac[4])
+-{
+-#define _l4proto_type flag[0]
+-#define _ipversion_type flag[1]
+-#define _pname (&flag[2])
+-#define _is_wan flag[2]
+-#define _dscp flag[6]
++struct route_params {
++	__u32 flag[8];
++	const void *l4hdr;
++	const __be32 *saddr;
++	const __be32 *daddr;
++	__be32 mac[4];
++};
+ 
+-	int ret;
+-	struct lpm_key *lpm_key;
+-	__u32 key = MatchType_L4Proto;
++struct route_ctx {
++	const struct route_params *params;
+ 	__u16 h_dport;
+ 	__u16 h_sport;
+-	struct lpm_key lpm_key_instance = {
+-		.trie_key = { IPV6_BYTE_LENGTH * 8, {} },
+-	};
+-
+-	/// TODO: BPF_MAP_UPDATE_BATCH ?
+-	ret = bpf_map_update_elem(&l4proto_ipversion_map, &key, &_l4proto_type,
+-				  BPF_ANY);
+-	if (unlikely(ret))
+-		return ret;
+-	key = MatchType_IpVersion;
+-	ret = bpf_map_update_elem(&l4proto_ipversion_map, &key,
+-				  &_ipversion_type, BPF_ANY);
+-	if (unlikely(ret))
+-		return ret;
+-
+-	// Variables for further use.
+-	if (_l4proto_type == L4ProtoType_TCP) {
+-		h_dport = bpf_ntohs(((struct tcphdr *)l4hdr)->dest);
+-		h_sport = bpf_ntohs(((struct tcphdr *)l4hdr)->source);
+-	} else {
+-		h_dport = bpf_ntohs(((struct udphdr *)l4hdr)->dest);
+-		h_sport = bpf_ntohs(((struct udphdr *)l4hdr)->source);
+-	}
+-
+-	key = MatchType_SourcePort;
+-	if (unlikely((ret = bpf_map_update_elem(&h_port_map, &key, &h_sport,
+-						BPF_ANY))))
+-		return ret;
+-	key = MatchType_Port;
+-	if (unlikely((ret = bpf_map_update_elem(&h_port_map, &key, &h_dport,
+-						BPF_ANY))))
+-		return ret;
++	__s64 result; // high -> low: sign(1b) unused(23b) mark(32b) outbound(8b)
++	struct lpm_key lpm_key_saddr, lpm_key_daddr, lpm_key_mac;
++	volatile __u8 isdns_must_goodsubrule_badrule;
++};
+ 
+-	__builtin_memcpy(lpm_key_instance.data, daddr, IPV6_BYTE_LENGTH);
+-	key = MatchType_IpSet;
+-	ret = bpf_map_update_elem(&lpm_key_map, &key, &lpm_key_instance,
+-				  BPF_ANY);
+-	if (unlikely(ret))
+-		return ret;
+-	__builtin_memcpy(lpm_key_instance.data, saddr, IPV6_BYTE_LENGTH);
+-	key = MatchType_SourceIpSet;
+-	ret = bpf_map_update_elem(&lpm_key_map, &key, &lpm_key_instance,
+-				  BPF_ANY);
+-	if (unlikely(ret))
+-		return ret;
+-	__builtin_memcpy(lpm_key_instance.data, mac, IPV6_BYTE_LENGTH);
+-	key = MatchType_Mac;
+-	ret = bpf_map_update_elem(&lpm_key_map, &key, &lpm_key_instance,
+-				  BPF_ANY);
+-	if (unlikely(ret))
+-		return ret;
++static int route_loop_cb(__u32 index, void *data)
++{
++#define _l4proto_type ctx->params->flag[0]
++#define _ipversion_type ctx->params->flag[1]
++#define _pname (&ctx->params->flag[2])
++#define _is_wan ctx->params->flag[2]
++#define _dscp ctx->params->flag[6]
+ 
+-	struct map_lpm_type *lpm;
++	struct route_ctx *ctx = data;
+ 	struct match_set *match_set;
++	struct lpm_key *lpm_key;
++	struct map_lpm_type *lpm;
+ 	// Rule is like: domain(suffix:baidu.com, suffix:google.com) && port(443) ->
+ 	// proxy Subrule is like: domain(suffix:baidu.com, suffix:google.com) Match
+ 	// set is like: suffix:baidu.com
+-	volatile __u8 isdns_must_goodsubrule_badrule =
+-		(h_dport == 53 && _l4proto_type == L4ProtoType_UDP) << 3;
+ 	struct domain_routing *domain_routing;
+-	__u32 *p_u32;
+-	__u16 *p_u16;
+ 
+-	// Unroll can give less instructions but more memory consumption when loading.
+-	// We disable it here to support more poor memory devices.
+-#ifdef __UNROLL_ROUTE_LOOP
+-#pragma unroll
+-#endif
+-	for (__u32 i = 0; i < MAX_MATCH_SET_LEN; i++) {
+-		__u32 k = i; // Clone to pass code checker.
++	if (unlikely(index / 32 >= MAX_MATCH_SET_LEN / 32)) {
++		ctx->result = -EFAULT;
++		return 1;
++	}
+ 
+-		match_set = bpf_map_lookup_elem(&routing_map, &k);
+-		if (unlikely(!match_set))
+-			return -EFAULT;
+-		if (isdns_must_goodsubrule_badrule & 0b11) {
++	__u32 k = index; // Clone to pass code checker.
++
++	match_set = bpf_map_lookup_elem(&routing_map, &k);
++	if (unlikely(!match_set)) {
++		ctx->result = -EFAULT;
++		return 1;
++	}
++	if (ctx->isdns_must_goodsubrule_badrule & 0b11) {
+ #ifdef __DEBUG_ROUTING
+-			key = match_set->type;
+-			bpf_printk("key(match_set->type): %llu", key);
+-			bpf_printk(
+-				"Skip to judge. bad_rule: %d, good_subrule: %d",
+-				isdns_must_goodsubrule_badrule & 0b10,
+-				isdns_must_goodsubrule_badrule & 0b1);
++		bpf_printk("key(match_set->type): %llu", match_set->type);
++		bpf_printk("Skip to judge. bad_rule: %d, good_subrule: %d",
++			   ctx->isdns_must_goodsubrule_badrule & 0b10,
++			   ctx->isdns_must_goodsubrule_badrule & 0b1);
+ #endif
+-			goto before_next_loop;
++		goto before_next_loop;
++	}
++	switch (match_set->type) {
++	case MatchType_Mac:
++		lpm_key = &ctx->lpm_key_mac;
++		goto lookup_lpm;
++	case MatchType_IpSet:
++		lpm_key = &ctx->lpm_key_daddr;
++		goto lookup_lpm;
++	case MatchType_SourceIpSet:
++		lpm_key = &ctx->lpm_key_saddr;
++lookup_lpm:
++#ifdef __DEBUG_ROUTING
++		bpf_printk(
++			"CHECK: lpm_key_map, match_set->type: %u, not: %d, outbound: %u",
++			match_set->type, match_set->not, match_set->outbound);
++		bpf_printk("\tip: %pI6", lpm_key->data);
++#endif
++		lpm = bpf_map_lookup_elem(&lpm_array_map, &match_set->index);
++		if (unlikely(!lpm)) {
++			ctx->result = -EFAULT;
++			return 1;
++		}
++		if (bpf_map_lookup_elem(lpm, lpm_key)) {
++			// match_set hits.
++			ctx->isdns_must_goodsubrule_badrule |= 0b10;
+ 		}
+-		key = match_set->type;
++		break;
++	case MatchType_Port:
+ #ifdef __DEBUG_ROUTING
+-		bpf_printk("key(match_set->type): %llu", key);
++		bpf_printk(
++			"CHECK: h_port_map, match_set->type: %u, not: %d, outbound: %u",
++			match_set->type, match_set->not, match_set->outbound);
++		bpf_printk("\tport: %u, range: [%u, %u]", ctx->h_dport,
++			   match_set->port_range.port_start,
++			   match_set->port_range.port_end);
+ #endif
+-		lpm_key = bpf_map_lookup_elem(&lpm_key_map, &key);
+-		if (lpm_key) {
++		if (match_set->port_range.port_start <= ctx->h_dport &&
++		    ctx->h_dport <= match_set->port_range.port_end) {
++			ctx->isdns_must_goodsubrule_badrule |= 0b10;
++		}
++		break;
++	case MatchType_SourcePort:
+ #ifdef __DEBUG_ROUTING
+-			bpf_printk(
+-				"CHECK: lpm_key_map, match_set->type: %u, not: %d, outbound: %u",
+-				match_set->type, match_set->not,
+-				match_set->outbound);
+-			bpf_printk("\tip: %pI6", lpm_key->data);
++		bpf_printk(
++			"CHECK: h_port_map, match_set->type: %u, not: %d, outbound: %u",
++			match_set->type, match_set->not, match_set->outbound);
++		bpf_printk("\tport: %u, range: [%u, %u]", ctx->h_sport,
++			   match_set->port_range.port_start,
++			   match_set->port_range.port_end);
+ #endif
+-			lpm = bpf_map_lookup_elem(&lpm_array_map,
+-						  &match_set->index);
+-			if (unlikely(!lpm))
+-				return -EFAULT;
+-			if (bpf_map_lookup_elem(lpm, lpm_key)) {
+-				// match_set hits.
+-				isdns_must_goodsubrule_badrule |= 0b10;
+-			}
+-		} else if ((p_u16 = bpf_map_lookup_elem(&h_port_map, &key))) {
++		if (match_set->port_range.port_start <= ctx->h_sport &&
++		    ctx->h_sport <= match_set->port_range.port_end) {
++			ctx->isdns_must_goodsubrule_badrule |= 0b10;
++		}
++		break;
++	case MatchType_L4Proto:
+ #ifdef __DEBUG_ROUTING
+-			bpf_printk(
+-				"CHECK: h_port_map, match_set->type: %u, not: %d, outbound: %u",
+-				match_set->type, match_set->not,
+-				match_set->outbound);
+-			bpf_printk("\tport: %u, range: [%u, %u]", *p_u16,
+-				   match_set->port_range.port_start,
+-				   match_set->port_range.port_end);
++		bpf_printk(
++			"CHECK: l4proto, match_set->type: %u, not: %d, outbound: %u",
++			match_set->type, match_set->not, match_set->outbound);
+ #endif
+-			if (*p_u16 >= match_set->port_range.port_start &&
+-			    *p_u16 <= match_set->port_range.port_end) {
+-				isdns_must_goodsubrule_badrule |= 0b10;
+-			}
+-		} else if ((p_u32 = bpf_map_lookup_elem(&l4proto_ipversion_map,
+-							&key))) {
++		if (_l4proto_type & match_set->l4proto_type)
++			ctx->isdns_must_goodsubrule_badrule |= 0b10;
++		break;
++	case MatchType_IpVersion:
+ #ifdef __DEBUG_ROUTING
+-			bpf_printk(
+-				"CHECK: l4proto_ipversion_map, match_set->type: %u, not: %d, outbound: %u",
+-				match_set->type, match_set->not,
+-				match_set->outbound);
++		bpf_printk(
++			"CHECK: ipversion, match_set->type: %u, not: %d, outbound: %u",
++			match_set->type, match_set->not, match_set->outbound);
+ #endif
+-			if (*p_u32 & *(__u32 *)&match_set->__value)
+-				isdns_must_goodsubrule_badrule |= 0b10;
+-		} else {
+-			switch (key) {
+-			case MatchType_DomainSet:
++		if (_ipversion_type & match_set->ip_version)
++			ctx->isdns_must_goodsubrule_badrule |= 0b10;
++		break;
++	case MatchType_DomainSet:
+ #ifdef __DEBUG_ROUTING
+-				bpf_printk(
+-					"CHECK: domain, match_set->type: %u, not: %d, outbound: %u",
+-					match_set->type, match_set->not,
+-					match_set->outbound);
++		bpf_printk(
++			"CHECK: domain, match_set->type: %u, not: %d, outbound: %u",
++			match_set->type, match_set->not, match_set->outbound);
+ #endif
+ 
+-				// Get domain routing bitmap.
+-				domain_routing = bpf_map_lookup_elem(
+-					&domain_routing_map, daddr);
+-
+-				// We use key instead of k to pass checker.
+-				if (domain_routing &&
+-				    (domain_routing->bitmap[i / 32] >>
+-				     (i % 32)) &
+-					    1)
+-					isdns_must_goodsubrule_badrule |= 0b10;
+-				break;
+-			case MatchType_ProcessName:
+-				if (_is_wan &&
+-				    equal16(match_set->pname, _pname))
+-					isdns_must_goodsubrule_badrule |= 0b10;
+-				break;
+-			case MatchType_Dscp:
+-				if (_dscp == match_set->dscp)
+-					isdns_must_goodsubrule_badrule |= 0b10;
+-				break;
+-			case MatchType_Fallback:
++		// Get domain routing bitmap.
++		domain_routing = bpf_map_lookup_elem(&domain_routing_map,
++						     ctx->params->daddr);
++
++		// We use key instead of k to pass checker.
++		if (domain_routing &&
++		    (domain_routing->bitmap[index / 32] >> (index % 32)) & 1)
++			ctx->isdns_must_goodsubrule_badrule |= 0b10;
++		break;
++	case MatchType_ProcessName:
++		if (_is_wan && equal16(match_set->pname, _pname))
++			ctx->isdns_must_goodsubrule_badrule |= 0b10;
++		break;
++	case MatchType_Dscp:
++		if (_dscp == match_set->dscp)
++			ctx->isdns_must_goodsubrule_badrule |= 0b10;
++		break;
++	case MatchType_Fallback:
+ #ifdef __DEBUG_ROUTING
+-				bpf_printk("CHECK: hit fallback");
++		bpf_printk("CHECK: hit fallback");
+ #endif
+-				isdns_must_goodsubrule_badrule |= 0b10;
+-				break;
+-			default:
++		ctx->isdns_must_goodsubrule_badrule |= 0b10;
++		break;
++	default:
+ #ifdef __DEBUG_ROUTING
+-				bpf_printk(
+-					"CHECK: <unknown>, match_set->type: %u, not: %d, outbound: %u",
+-					match_set->type, match_set->not,
+-					match_set->outbound);
++		bpf_printk(
++			"CHECK: <unknown>, match_set->type: %u, not: %d, outbound: %u",
++			match_set->type, match_set->not, match_set->outbound);
+ #endif
+-				return -EINVAL;
+-			}
+-		}
++		ctx->result = -EINVAL;
++		return 1;
++	}
+ 
+ before_next_loop:
+ #ifdef __DEBUG_ROUTING
+-		bpf_printk("good_subrule: %d, bad_rule: %d",
+-			   isdns_must_goodsubrule_badrule & 0b10,
+-			   isdns_must_goodsubrule_badrule & 0b1);
++	bpf_printk("good_subrule: %d, bad_rule: %d",
++		   ctx->isdns_must_goodsubrule_badrule & 0b10,
++		   ctx->isdns_must_goodsubrule_badrule & 0b1);
+ #endif
+-		if (match_set->outbound != OUTBOUND_LOGICAL_OR) {
+-			// This match_set reaches the end of subrule.
+-			// We are now at end of rule, or next match_set belongs to another
+-			// subrule.
+-
+-			if ((isdns_must_goodsubrule_badrule & 0b10) > 0 ==
+-			    match_set->not ) {
+-				// This subrule does not hit.
+-				isdns_must_goodsubrule_badrule |= 0b1;
+-			}
+-
+-			// Reset good_subrule.
+-			isdns_must_goodsubrule_badrule &= ~0b10;
++	if (match_set->outbound != OUTBOUND_LOGICAL_OR) {
++		// This match_set reaches the end of subrule.
++		// We are now at end of rule, or next match_set belongs to another
++		// subrule.
++
++		if ((ctx->isdns_must_goodsubrule_badrule & 0b10) > 0 ==
++		    match_set->not ) {
++			// This subrule does not hit.
++			ctx->isdns_must_goodsubrule_badrule |= 0b1;
+ 		}
++
++		// Reset good_subrule.
++		ctx->isdns_must_goodsubrule_badrule &= ~0b10;
++	}
+ #ifdef __DEBUG_ROUTING
+-		bpf_printk("_bad_rule: %d",
+-			   isdns_must_goodsubrule_badrule & 0b1);
++	bpf_printk("_bad_rule: %d", ctx->isdns_must_goodsubrule_badrule & 0b1);
+ #endif
+-		if ((match_set->outbound & OUTBOUND_LOGICAL_MASK) !=
+-		    OUTBOUND_LOGICAL_MASK) {
+-			// Tail of a rule (line).
+-			// Decide whether to hit.
+-			if (!(isdns_must_goodsubrule_badrule & 0b1)) {
++	if ((match_set->outbound & OUTBOUND_LOGICAL_MASK) !=
++	    OUTBOUND_LOGICAL_MASK) {
++		// Tail of a rule (line).
++		// Decide whether to hit.
++		if (!(ctx->isdns_must_goodsubrule_badrule & 0b1)) {
+ #ifdef __DEBUG_ROUTING
+-				bpf_printk(
+-					"MATCHED: match_set->type: %u, match_set->not: %d",
+-					match_set->type, match_set->not );
++			bpf_printk(
++				"MATCHED: match_set->type: %u, match_set->not: %d",
++				match_set->type, match_set->not );
+ #endif
+ 
+-				// DNS requests should routed by control plane if outbound is not
+-				// must_direct.
+-
+-				if (unlikely(match_set->outbound ==
+-					     OUTBOUND_MUST_RULES)) {
+-					isdns_must_goodsubrule_badrule |= 0b100;
+-				} else {
+-					if (isdns_must_goodsubrule_badrule &
+-					    0b100)
+-						match_set->must = true;
+-					if (!match_set->must &&
+-					    (isdns_must_goodsubrule_badrule &
+-					     0b1000)) {
+-						return (__s64)OUTBOUND_CONTROL_PLANE_ROUTING |
+-						       ((__s64)match_set->mark
+-							<< 8) |
+-						       ((__s64)match_set->must
+-							<< 40);
+-					} else {
+-						return (__s64)match_set
+-							       ->outbound |
+-						       ((__s64)match_set->mark
+-							<< 8) |
+-						       ((__s64)match_set->must
+-							<< 40);
+-					}
++			// DNS requests should routed by control plane if outbound is not
++			// must_direct.
++
++			if (unlikely(match_set->outbound ==
++				     OUTBOUND_MUST_RULES)) {
++				ctx->isdns_must_goodsubrule_badrule |= 0b100;
++			} else {
++				if (ctx->isdns_must_goodsubrule_badrule & 0b100)
++					match_set->must = true;
++				if (!match_set->must &&
++				    (ctx->isdns_must_goodsubrule_badrule &
++				     0b1000)) {
++					ctx->result =
++						(__s64)OUTBOUND_CONTROL_PLANE_ROUTING |
++						((__s64)match_set->mark << 8) |
++						((__s64)match_set->must << 40);
++#ifdef __DEBUG_ROUTING
++					bpf_printk(
++						"OUTBOUND_CONTROL_PLANE_ROUTING: %ld",
++						ctx->result);
++#endif
++					return 1;
+ 				}
++				ctx->result = (__s64)match_set->outbound |
++					      ((__s64)match_set->mark << 8) |
++					      ((__s64)match_set->must << 40);
++#ifdef __DEBUG_ROUTING
++				bpf_printk("outbound %u: %ld",
++					   match_set->outbound, ctx->result);
++#endif
++				return 1;
+ 			}
+-			isdns_must_goodsubrule_badrule &= ~0b1;
+ 		}
++		ctx->isdns_must_goodsubrule_badrule &= ~0b1;
+ 	}
++	return 0;
++#undef _l4proto_type
++#undef _ipversion_type
++#undef _pname
++#undef _is_wan
++#undef _dscp
++}
++
++__always_inline __s64 route(const struct route_params *params)
++{
++#define _l4proto_type params->flag[0]
++#define _ipversion_type params->flag[1]
++#define _pname (&params->flag[2])
++#define _is_wan params->flag[2]
++#define _dscp params->flag[6]
++
++	int ret;
++	struct route_ctx ctx;
++
++	__builtin_memset(&ctx, 0, sizeof(ctx));
++	ctx.params = params;
++	ctx.result = -ENOEXEC;
++
++	// Variables for further use.
++	if (_l4proto_type == L4ProtoType_TCP) {
++		ctx.h_dport = bpf_ntohs(((struct tcphdr *)params->l4hdr)->dest);
++		ctx.h_sport =
++			bpf_ntohs(((struct tcphdr *)params->l4hdr)->source);
++	} else {
++		ctx.h_dport = bpf_ntohs(((struct udphdr *)params->l4hdr)->dest);
++		ctx.h_sport =
++			bpf_ntohs(((struct udphdr *)params->l4hdr)->source);
++	}
++
++	// Rule is like: domain(suffix:baidu.com, suffix:google.com) && port(443) ->
++	// proxy Subrule is like: domain(suffix:baidu.com, suffix:google.com) Match
++	// set is like: suffix:baidu.com
++	ctx.isdns_must_goodsubrule_badrule =
++		(ctx.h_dport == 53 && _l4proto_type == L4ProtoType_UDP) << 3;
++
++	struct lpm_key lpm_key_saddr = {
++		.trie_key = { IPV6_BYTE_LENGTH * 8, {} },
++	};
++	ctx.lpm_key_saddr = lpm_key_saddr;
++	struct lpm_key lpm_key_daddr = {
++		.trie_key = { IPV6_BYTE_LENGTH * 8, {} },
++	};
++	ctx.lpm_key_daddr = lpm_key_daddr;
++	struct lpm_key lpm_key_mac = {
++		.trie_key = { IPV6_BYTE_LENGTH * 8, {} },
++	};
++	ctx.lpm_key_mac = lpm_key_mac;
++	__builtin_memcpy(ctx.lpm_key_saddr.data, params->saddr,
++			 IPV6_BYTE_LENGTH);
++	__builtin_memcpy(ctx.lpm_key_daddr.data, params->daddr,
++			 IPV6_BYTE_LENGTH);
++	__builtin_memcpy(ctx.lpm_key_mac.data, params->mac, IPV6_BYTE_LENGTH);
++
++	ret = bpf_loop(MAX_MATCH_SET_LEN, route_loop_cb, &ctx, 0);
++	if (unlikely(ret < 0))
++		return ret;
++	if (ctx.result >= 0)
++		return ctx.result;
+ 	bpf_printk(
+ 		"No match_set hits. Did coder forget to sync common/consts/ebpf.go with enum MatchType?");
+ 	return -EPERM;
+@@ -1054,8 +1069,6 @@ int tproxy_lan_ingress(struct __sk_buff *skb)
+ 	struct bpf_sock_tuple tuple = { 0 };
+ 	__u32 tuple_size;
+ 	struct bpf_sock *sk;
+-	__u32 flag[8];
+-	void *l4hdr;
+ 
+ 	if (skb->protocol == bpf_htons(ETH_P_IP)) {
+ 		tuple.ipv4.daddr = tuples.five.dip.u6_addr32[3];
+@@ -1090,36 +1103,36 @@ int tproxy_lan_ingress(struct __sk_buff *skb)
+ 	}
+ 
+ // Routing for new connection.
+-new_connection:
+-	__builtin_memset(flag, 0, sizeof(flag));
++new_connection:;
++	struct route_params params;
++
++	__builtin_memset(&params, 0, sizeof(params));
+ 	if (l4proto == IPPROTO_TCP) {
+ 		if (!(tcph.syn && !tcph.ack)) {
+ 			// Not a new TCP connection.
+ 			// Perhaps single-arm.
+ 			return TC_ACT_OK;
+ 		}
+-		l4hdr = &tcph;
+-		flag[0] = L4ProtoType_TCP;
++		params.l4hdr = &tcph;
++		params.flag[0] = L4ProtoType_TCP;
+ 	} else {
+-		l4hdr = &udph;
+-		flag[0] = L4ProtoType_UDP;
++		params.l4hdr = &udph;
++		params.flag[0] = L4ProtoType_UDP;
+ 	}
+ 	if (skb->protocol == bpf_htons(ETH_P_IP))
+-		flag[1] = IpVersionType_4;
++		params.flag[1] = IpVersionType_4;
+ 	else
+-		flag[1] = IpVersionType_6;
+-	flag[6] = tuples.dscp;
+-	__be32 mac[4] = {
+-		0,
+-		0,
+-		bpf_htonl((ethh.h_source[0] << 8) | (ethh.h_source[1])),
++		params.flag[1] = IpVersionType_6;
++	params.flag[6] = tuples.dscp;
++	params.mac[2] = bpf_htonl((ethh.h_source[0] << 8) | (ethh.h_source[1]));
++	params.mac[3] =
+ 		bpf_htonl((ethh.h_source[2] << 24) | (ethh.h_source[3] << 16) |
+-			  (ethh.h_source[4] << 8) | (ethh.h_source[5])),
+-	};
++			  (ethh.h_source[4] << 8) | (ethh.h_source[5]));
++	params.saddr = tuples.five.sip.u6_addr32;
++	params.daddr = tuples.five.dip.u6_addr32;
+ 	__s64 s64_ret;
+ 
+-	s64_ret = route(flag, l4hdr, tuples.five.sip.u6_addr32,
+-			tuples.five.dip.u6_addr32, mac);
++	s64_ret = route(&params);
+ 	if (s64_ret < 0) {
+ 		bpf_printk("shot routing: %d", s64_ret);
+ 		return TC_ACT_SHOT;
+@@ -1164,8 +1177,14 @@ new_connection:
+ #endif
+ 	if (routing_result.outbound == OUTBOUND_DIRECT) {
+ 		skb->mark = routing_result.mark;
++#if defined(__DEBUG_ROUTING) || defined(__PRINT_ROUTING_RESULT)
++		bpf_printk("GO OUTBOUND_DIRECT");
++#endif
+ 		goto direct;
+ 	} else if (unlikely(routing_result.outbound == OUTBOUND_BLOCK)) {
++#if defined(__DEBUG_ROUTING) || defined(__PRINT_ROUTING_RESULT)
++		bpf_printk("SHOT OUTBOUND_BLOCK");
++#endif
+ 		goto block;
+ 	}
+ 
+@@ -1386,36 +1405,37 @@ int tproxy_wan_egress(struct __sk_buff *skb)
+ 		if (unlikely(tcp_state_syn)) {
+ 			// New TCP connection.
+ 			// bpf_printk("[%X]New Connection", bpf_ntohl(tcph.seq));
+-			__u32 flag[8] = { L4ProtoType_TCP }; // TCP
++			struct route_params params;
+ 
++			__builtin_memset(&params, 0, sizeof(params));
++			params.l4hdr = &tcph;
++			params.flag[0] = L4ProtoType_TCP;
+ 			if (skb->protocol == bpf_htons(ETH_P_IP))
+-				flag[1] = IpVersionType_4;
++				params.flag[1] = IpVersionType_4;
+ 			else
+-				flag[1] = IpVersionType_6;
+-			flag[6] = tuples.dscp;
++				params.flag[1] = IpVersionType_6;
++			params.flag[6] = tuples.dscp;
+ 			if (pid_is_control_plane(skb, &pid_pname)) {
+ 				// From control plane. Direct.
+ 				return TC_ACT_OK;
+ 			}
+ 			if (pid_pname) {
+ 				// 2, 3, 4, 5
+-				__builtin_memcpy(&flag[2], pid_pname->pname,
++				__builtin_memcpy(&params.flag[2],
++						 pid_pname->pname,
+ 						 TASK_COMM_LEN);
+ 			}
+-			__be32 mac[4] = {
+-				0,
+-				0,
+-				bpf_htonl((ethh.h_source[0] << 8) |
+-					  (ethh.h_source[1])),
+-				bpf_htonl((ethh.h_source[2] << 24) |
+-					  (ethh.h_source[3] << 16) |
+-					  (ethh.h_source[4] << 8) |
+-					  (ethh.h_source[5])),
+-			};
++			params.mac[2] = bpf_htonl((ethh.h_source[0] << 8) |
++						  (ethh.h_source[1]));
++			params.mac[3] = bpf_htonl((ethh.h_source[2] << 24) |
++						  (ethh.h_source[3] << 16) |
++						  (ethh.h_source[4] << 8) |
++						  (ethh.h_source[5]));
++			params.saddr = tuples.five.sip.u6_addr32;
++			params.daddr = tuples.five.dip.u6_addr32;
+ 			__s64 s64_ret;
+ 
+-			s64_ret = route(flag, &tcph, tuples.five.sip.u6_addr32,
+-					tuples.five.dip.u6_addr32, mac);
++			s64_ret = route(&params);
+ 			if (s64_ret < 0) {
+ 				bpf_printk("shot routing: %d", s64_ret);
+ 				return TC_ACT_SHOT;
+@@ -1456,8 +1476,16 @@ int tproxy_wan_egress(struct __sk_buff *skb)
+ 		    mark == 0 // If mark is not zero, we should re-route it, so we send it
+ 		    // to control plane in WAN.
+ 		) {
++#if defined(__DEBUG_ROUTING) || defined(__PRINT_ROUTING_RESULT)
++			bpf_printk("GO OUTBOUND_DIRECT");
++#endif
++
++			skb->mark = mark;
+ 			return TC_ACT_OK;
+ 		} else if (unlikely(outbound == OUTBOUND_BLOCK)) {
++#if defined(__DEBUG_ROUTING) || defined(__PRINT_ROUTING_RESULT)
++			bpf_printk("SHOT OUTBOUND_BLOCK");
++#endif
+ 			return TC_ACT_SHOT;
+ 		}
+ 		// Rewrite to control plane.
+@@ -1499,13 +1527,17 @@ int tproxy_wan_egress(struct __sk_buff *skb)
+ 
+ 	} else if (l4proto == IPPROTO_UDP) {
+ 		// Routing. It decides if we redirect traffic to control plane.
+-		__u32 flag[8] = { L4ProtoType_UDP };
++		struct route_params params;
+ 
++		__builtin_memset(&params, 0, sizeof(params));
++		params.l4hdr = &udph;
++		params.flag[0] = L4ProtoType_UDP;
+ 		if (skb->protocol == bpf_htons(ETH_P_IP))
+-			flag[1] = IpVersionType_4;
++			params.flag[1] = IpVersionType_4;
+ 		else
+-			flag[1] = IpVersionType_6;
+-		flag[6] = tuples.dscp;
++			params.flag[1] = IpVersionType_6;
++		params.flag[6] = tuples.dscp;
++
+ 		struct pid_pname *pid_pname;
+ 
+ 		if (pid_is_control_plane(skb, &pid_pname)) {
+@@ -1526,21 +1558,20 @@ int tproxy_wan_egress(struct __sk_buff *skb)
+ 
+ 		if (pid_pname) {
+ 			// 2, 3, 4, 5
+-			__builtin_memcpy(&flag[2], pid_pname->pname,
++			__builtin_memcpy(&params.flag[2], pid_pname->pname,
+ 					 TASK_COMM_LEN);
+ 		}
+-		__be32 mac[4] = {
+-			0,
+-			0,
+-			bpf_htonl((ethh.h_source[0] << 8) | (ethh.h_source[1])),
+-			bpf_htonl((ethh.h_source[2] << 24) |
+-				  (ethh.h_source[3] << 16) |
+-				  (ethh.h_source[4] << 8) | (ethh.h_source[5])),
+-		};
++		params.mac[2] =
++			bpf_htonl((ethh.h_source[0] << 8) | (ethh.h_source[1]));
++		params.mac[3] = bpf_htonl(
++			(ethh.h_source[2] << 24) | (ethh.h_source[3] << 16) |
++			(ethh.h_source[4] << 8) | (ethh.h_source[5]));
++		params.saddr = tuples.five.sip.u6_addr32;
++		params.daddr = tuples.five.dip.u6_addr32;
++
+ 		__s64 s64_ret;
+ 
+-		s64_ret = route(flag, &udph, tuples.five.sip.u6_addr32,
+-				tuples.five.dip.u6_addr32, mac);
++		s64_ret = route(&params);
+ 		if (s64_ret < 0) {
+ 			bpf_printk("shot routing: %d", s64_ret);
+ 			return TC_ACT_SHOT;
+@@ -1677,6 +1708,78 @@ int tproxy_dae0_ingress(struct __sk_buff *skb)
+ 	return bpf_redirect(redirect_entry->ifindex, flags);
+ }
+ 
++struct get_real_comm_ctx {
++	char *arg_buf;
++	unsigned int l;
++};
++
++static int __noinline get_real_comm_loop_cb(__u32 index, void *data)
++{
++	/*
++	* For string like: /usr/lib/sddm/sddm-helper --socket /tmp/sddm-auth1
++	* We extract "sddm-helper" from it.
++	*/
++	struct get_real_comm_ctx *ctx = (struct get_real_comm_ctx *)data;
++
++	if (index >= MAX_ARG_LEN) // always false, just to make verifier happy
++		return 1;
++	if (unlikely(ctx->arg_buf[index] == '/'))
++		ctx->l = index + 1;
++	if (unlikely(ctx->arg_buf[index] == ' ' ||
++		     ctx->arg_buf[index] == '\0')) {
++		// Write to dst.
++		ctx->arg_buf[index] = '\0';
++		return 1;
++	}
++	return 0;
++}
++
++/// Parse command line arguments to get the real command name and tgid.
++static __always_inline int get_pid_pname(struct pid_pname *pid_pname)
++{
++	int ret;
++	// Get pointer to args string.
++	struct task_struct *task = (void *)bpf_get_current_task();
++	char *args = (void *)BPF_CORE_READ(task, mm, arg_start);
++
++	// Read args to buffer.
++	char arg_buf[MAX_ARG_LEN]; // Allocate it out of ctx to pass CO-RE
++	struct get_real_comm_ctx ctx = { 0 };
++
++	ctx.arg_buf = arg_buf;
++	ret = bpf_core_read_user_str(arg_buf, MAX_ARG_LEN, args);
++	if (unlikely(ret < 0)) {
++		bpf_printk(
++			"failed to read process name: bpf_core_read_user_str: %d",
++			ret);
++		return ret;
++	}
++
++	// Find range of command name.
++	ret = bpf_loop(MAX_ARG_LEN, get_real_comm_loop_cb, &ctx, 0);
++	if (unlikely(ret < 0))
++		return ret;
++
++	unsigned int offset = ctx.l; // Copy it to pass CO-RE
++
++	ret = bpf_core_read_str(pid_pname->pname, sizeof(pid_pname->pname),
++				arg_buf + offset);
++	if (unlikely(ret < 0)) {
++		bpf_printk("failed to read process name: bpf_core_read_str: %d",
++			   ret);
++		return ret;
++	}
++
++	// Pupulate tgid
++	ret = bpf_core_read(&pid_pname->pid, sizeof(pid_pname->pid),
++			    &task->tgid);
++	if (unlikely(ret < 0)) {
++		bpf_printk("failed to read pid: %d", ret);
++		return ret;
++	}
++	return 0;
++}
++
+ static __always_inline int _update_map_elem_by_cookie(const __u64 cookie)
+ {
+ 	if (unlikely(!cookie)) {
+@@ -1691,64 +1794,10 @@ static __always_inline int _update_map_elem_by_cookie(const __u64 cookie)
+ 	int ret;
+ 	// Build value.
+ 	struct pid_pname val = { 0 };
+-	char buf[MAX_ARG_SCANNER_BUFFER_SIZE] = { 0 };
+-	struct task_struct *current = (void *)bpf_get_current_task();
+-	unsigned long arg_start = BPF_CORE_READ(current, mm, arg_start);
+-	unsigned long arg_end = BPF_CORE_READ(current, mm, arg_end);
+-
+-	/*
+-   * For string like: /usr/lib/sddm/sddm-helper --socket /tmp/sddm-auth1
+-   * We extract "sddm-helper" from it.
+-   */
+-	unsigned long loc, j, last_slash = -1;
+-#pragma unroll
+-	for (loc = 0, j = 0; j < MAX_ARG_LEN_TO_PROBE;
+-	     ++j, loc = ((loc + 1) & (MAX_ARG_SCANNER_BUFFER_SIZE - 1))) {
+-		// volatile unsigned long k = j; // Cheat to unroll.
+-		if (unlikely(arg_start + j >= arg_end))
+-			break;
+-		if (unlikely(loc == 0)) {
+-			/// WANRING: Do NOT use bpf_core_read_user_str, it will bring terminator
+-			/// 0.
+-			// __builtin_memset(&buf, 0, MAX_ARG_SCANNER_BUFFER_SIZE);
+-			unsigned long to_read = arg_end - (arg_start + j);
+-
+-			if (to_read > MAX_ARG_SCANNER_BUFFER_SIZE)
+-				to_read = MAX_ARG_SCANNER_BUFFER_SIZE;
+-			else
+-				buf[to_read] = 0;
+-			ret = bpf_core_read_user(&buf, to_read,
+-						 (const void *)(arg_start + j));
+-			if (ret) {
+-				// bpf_printk("failed to read process name.0: [%ld, %ld]", arg_start,
+-				//						arg_end);
+-				// bpf_printk("_failed to read process name.0: %ld %ld", j, to_read);
+-				return ret;
+-			}
+-		}
+-		if (unlikely(buf[loc] == '/'))
+-			last_slash = j;
+-		else if (unlikely(buf[loc] == ' ' || buf[loc] == 0))
+-			break;
+-	}
+-	++last_slash;
+-	unsigned long length_cpy = j - last_slash;
+ 
+-	if (length_cpy > TASK_COMM_LEN)
+-		length_cpy = TASK_COMM_LEN;
+-	ret = bpf_core_read_user(&val.pname, length_cpy,
+-				 (const void *)(arg_start + last_slash));
+-	if (ret) {
+-		bpf_printk("failed to read process name.1: %d", ret);
+-		return ret;
+-	}
+-	ret = bpf_core_read(&val.pid, sizeof(val.pid), &current->tgid);
+-	if (ret) {
+-		bpf_printk("failed to read pid: %d", ret);
++	ret = get_pid_pname(&val);
++	if (ret)
+ 		return ret;
+-	}
+-	// bpf_printk("a start_end: %lu %lu", arg_start, arg_end);
+-	// bpf_printk("b start_end: %lu %lu", arg_start + last_slash, arg_start + j);
+ 
+ 	// Update map.
+ 	ret = bpf_map_update_elem(&cookie_pid_map, &cookie, &val, BPF_ANY);
+diff --git a/docs/en/README.md b/docs/en/README.md
+index 527fec2..3b995ba 100644
+--- a/docs/en/README.md
++++ b/docs/en/README.md
+@@ -9,21 +9,21 @@
+ Use `uname -r` to check the kernel version on your machine.
+ 
+ > **Note**
+-> If you find your kernel version is `< 5.8`, follow the [**Upgrade Guide**](user-guide/kernel-upgrade.md) to upgrade the kernel to the minimum required version.
++> If you find your kernel version is `< 5.17`, follow the [**Upgrade Guide**](user-guide/kernel-upgrade.md) to upgrade the kernel to the minimum required version.
+ 
+-`Bind to LAN: >= 5.8`
++`Bind to LAN: >= 5.17`
+ 
+ You need bind dae to LAN interface, if you want to provide network service for LAN as an intermediate device.
+ 
+-This feature requires the kernel version of machine on which dae install >= 5.8.
++This feature requires the kernel version of machine on which dae install >= 5.17.
+ 
+ Note that if you bind dae to LAN only, dae only provide network service for traffic from LAN, and not impact local programs.
+ 
+-`Bind to WAN: >= 5.15`
++`Bind to WAN: >= 5.17`
+ 
+ You need bind dae to WAN interface, if you want dae to provide network service for local programs.
+ 
+-This feature requires kernel version of the machine >= 5.15.
++This feature requires kernel version of the machine >= 5.17.
+ 
+ Note that if you bind dae to WAN only, dae only provide network service for local programs and not impact traffic coming in from other interfaces.
+ 
+diff --git a/docs/zh/README.md b/docs/zh/README.md
+index 157fc13..f0d8f6d 100644
+--- a/docs/zh/README.md
++++ b/docs/zh/README.md
+@@ -7,21 +7,21 @@
+ 使用 `uname -r` 来查看内核版本。
+ 
+ > **注意**
+-> 如果你的内核版本低于 `5.8`，可以参考 [**Upgrade Guide**](../en/user-guide/kernel-upgrade.md) 升级你的内核。
++> 如果你的内核版本低于 `5.17`，可以参考 [**Upgrade Guide**](../en/user-guide/kernel-upgrade.md) 升级你的内核。
+ 
+-`绑定到 LAN 接口: >= 5.8`
++`绑定到 LAN 接口: >= 5.17`
+ 
+ 如果你想作为路由器、网桥等中间设备，为其他设备提供代理服务，需要把 dae 绑定到 LAN 接口上。
+ 
+-该特性要求 dae 所在的设备的内核版本 >= 5.8。
++该特性要求 dae 所在的设备的内核版本 >= 5.17。
+ 
+ 如果你只在 `lan_interface` 中填写了接口，而未在 `wan_interface` 中填写内容，那么本地程序将无法被代理。如果你期望代理本地程序，需要在 `wan_interface` 中填写 `auto` 或是手动输入 WAN 接口。
+ 
+-`绑定到 WAN 接口: >= 5.15`
++`绑定到 WAN 接口: >= 5.17`
+ 
+ 如果你想为本地程序提供代理服务，需要把 dae 绑定到 WAN 接口上。
+ 
+-该特性要求 dae 所在的设备的内核版本 >= 5.15。
++该特性要求 dae 所在的设备的内核版本 >= 5.17。
+ 
+ 如果你只在 `wan_interface` 中填写了接口或 `auto`，而未在 `lan_interface` 中填写内容，那么从局域网中传来的流量将无法被代理。如果你想同时代理本机和局域网流量，请同时填写 `wan_interface` 和 `lan_interface`。
+ 
+diff --git a/go.mod b/go.mod
+index 9f3f84a..0aad14c 100644
+--- a/go.mod
++++ b/go.mod
+@@ -3,97 +3,99 @@ module github.com/daeuniverse/dae
+ go 1.22
+ 
+ require (
+-	github.com/adrg/xdg v0.4.0
++	github.com/adrg/xdg v0.5.0
+ 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df
+-	github.com/bits-and-blooms/bloom/v3 v3.5.0
+-	github.com/cilium/ebpf v0.12.3
++	github.com/bits-and-blooms/bloom/v3 v3.7.0
++	github.com/cilium/ebpf v0.15.0
+ 	github.com/daeuniverse/dae-config-dist/go/dae_config v0.0.0-20230604120805-1c27619b592d
+ 	github.com/daeuniverse/outbound v0.0.0-20240926154825-3905858d935f
+ 	github.com/fsnotify/fsnotify v1.7.0
+ 	github.com/json-iterator/go v1.1.12
+ 	github.com/mholt/archiver/v3 v3.5.1
+-	github.com/miekg/dns v1.1.58
++	github.com/miekg/dns v1.1.61
+ 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
+ 	github.com/okzk/sdnotify v0.0.0-20180710141335-d9becc38acbd
+ 	github.com/panjf2000/ants v1.3.0
+-	github.com/safchain/ethtool v0.3.0
+-	github.com/shirou/gopsutil/v4 v4.24.5
++	github.com/panjf2000/ants v1.3.0
++	github.com/safchain/ethtool v0.4.1
++	github.com/shirou/gopsutil/v4 v4.24.6
+ 	github.com/sirupsen/logrus v1.9.3
+-	github.com/spf13/cobra v1.7.0
++	github.com/spf13/cobra v1.8.1
+ 	github.com/stretchr/testify v1.9.0
+ 	github.com/v2rayA/ahocorasick-domain v0.0.0-20231231085011-99ceb8ef3208
+ 	github.com/vishvananda/netlink v1.1.0
+ 	github.com/vishvananda/netns v0.0.4
+ 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+-	golang.org/x/crypto v0.21.0
+-	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
+-	golang.org/x/sys v0.20.0
+-	google.golang.org/protobuf v1.33.0
++	golang.org/x/crypto v0.25.0
++	golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7
++	golang.org/x/sys v0.22.0
++	google.golang.org/protobuf v1.34.2
+ 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+ )
+ 
+ require (
+-	github.com/andybalholm/brotli v1.0.6 // indirect
++	github.com/andybalholm/brotli v1.1.0 // indirect
+ 	github.com/awnumar/fastrand v0.0.0-20210315215012-30ee0990fa2d // indirect
+-	github.com/awnumar/memcall v0.0.0-20190816154910-db5ea08008a3 // indirect
+-	github.com/awnumar/memguard v0.19.1 // indirect
+-	github.com/cloudflare/circl v1.3.7 // indirect
++	github.com/awnumar/memcall v0.3.0 // indirect
++	github.com/awnumar/memguard v0.22.5 // indirect
++	github.com/cloudflare/circl v1.3.9 // indirect
+ 	github.com/daeuniverse/quic-go v0.0.0-20240413031024-943f218e0810 // indirect
+ 	github.com/davecgh/go-spew v1.1.1 // indirect
+ 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
+-	github.com/go-ole/go-ole v1.2.6 // indirect
+-	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
+-	github.com/golang/snappy v0.0.2 // indirect
+-	github.com/google/pprof v0.0.0-20230705174524-200ffdc848b8 // indirect
+-	github.com/gorilla/websocket v1.5.0 // indirect
+-	github.com/klauspost/compress v1.17.4 // indirect
+-	github.com/klauspost/pgzip v1.2.5 // indirect
++	github.com/go-ole/go-ole v1.3.0 // indirect
++	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
++	github.com/golang/snappy v0.0.4 // indirect
++	github.com/google/pprof v0.0.0-20240711041743-f6c9dda6c6da // indirect
++	github.com/gorilla/websocket v1.5.3 // indirect
++	github.com/klauspost/compress v1.17.9 // indirect
++	github.com/klauspost/pgzip v1.2.6 // indirect
+ 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
+-	github.com/nwaples/rardecode v1.1.0 // indirect
+-	github.com/onsi/ginkgo/v2 v2.11.0 // indirect
+-	github.com/pierrec/lz4/v4 v4.1.2 // indirect
++	github.com/nwaples/rardecode v1.1.3 // indirect
++	github.com/onsi/ginkgo/v2 v2.19.0 // indirect
++	github.com/pierrec/lz4/v4 v4.1.21 // indirect
+ 	github.com/pmezard/go-difflib v1.0.0 // indirect
+-	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
++	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
+ 	github.com/quic-go/qpack v0.4.0 // indirect
+ 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+ 	github.com/tklauser/go-sysconf v0.3.12 // indirect
+ 	github.com/tklauser/numcpus v0.6.1 // indirect
+-	github.com/ulikunitz/xz v0.5.9 // indirect
++	github.com/ulikunitz/xz v0.5.12 // indirect
+ 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+ 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+ 	go.uber.org/mock v0.4.0 // indirect
+-	golang.org/x/mod v0.15.0 // indirect
+-	golang.org/x/net v0.22.0 // indirect
+-	golang.org/x/tools v0.18.0 // indirect
+-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230807174057-1744710a1577 // indirect
++	golang.org/x/mod v0.19.0 // indirect
++	golang.org/x/net v0.27.0 // indirect
++	golang.org/x/sync v0.7.0 // indirect
++	golang.org/x/tools v0.23.0 // indirect
++	google.golang.org/genproto/googleapis/rpc v0.0.0-20240711142825-46eb208f015d // indirect
+ 	gopkg.in/yaml.v3 v3.0.1 // indirect
+ )
+ 
+ require (
+-	github.com/bits-and-blooms/bitset v1.8.0 // indirect
++	github.com/bits-and-blooms/bitset v1.13.0 // indirect
+ 	github.com/dgryski/go-camellia v0.0.0-20191119043421-69a8a13fb23d // indirect
+ 	github.com/dgryski/go-idea v0.0.0-20170306091226-d2fb45a411fb // indirect
+ 	github.com/dgryski/go-metro v0.0.0-20211217172704-adc40b04c140 // indirect
+ 	github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152 // indirect
+-	github.com/dlclark/regexp2 v1.11.0
++	github.com/dlclark/regexp2 v1.11.2
+ 	github.com/eknkc/basex v1.0.1 // indirect
+-	github.com/golang/protobuf v1.5.3 // indirect
+-	github.com/google/uuid v1.3.0 // indirect
++	github.com/golang/protobuf v1.5.4 // indirect
++	github.com/google/uuid v1.6.0 // indirect
+ 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+ 	github.com/mattn/go-colorable v0.1.13 // indirect
+-	github.com/mattn/go-isatty v0.0.19 // indirect
++	github.com/mattn/go-isatty v0.0.20 // indirect
+ 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
+ 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+ 	github.com/modern-go/reflect2 v1.0.2 // indirect
+ 	github.com/mzz2017/disk-bloom v1.0.1 // indirect
+ 	github.com/onsi/ginkgo v1.16.5 // indirect
+-	github.com/refraction-networking/utls v1.6.4 // indirect
+-	github.com/seiflotfy/cuckoofilter v0.0.0-20220411075957-e3b120b3f5fb // indirect
++	github.com/refraction-networking/utls v1.6.7 // indirect
++	github.com/seiflotfy/cuckoofilter v0.0.0-20240715131351-a2f2c23f1771 // indirect
+ 	github.com/spf13/pflag v1.0.5 // indirect
+ 	gitlab.com/yawning/chacha20.git v0.0.0-20230427033715-7877545b1b37 // indirect
+-	golang.org/x/term v0.18.0 // indirect
+-	golang.org/x/text v0.14.0 // indirect
+-	google.golang.org/grpc v1.57.0 // indirect
++	golang.org/x/term v0.22.0 // indirect
++	golang.org/x/text v0.16.0 // indirect
++	google.golang.org/grpc v1.65.0 // indirect
+ )
+ 
+ // replace github.com/daeuniverse/outbound => ../outbound
+diff --git a/go.sum b/go.sum
+index 8d50043..c983f8f 100644
+--- a/go.sum
++++ b/go.sum
+@@ -1,26 +1,29 @@
+-github.com/adrg/xdg v0.4.0 h1:RzRqFcjH4nE5C6oTAxhBtoE2IRyjBSa62SCbyPidvls=
+-github.com/adrg/xdg v0.4.0/go.mod h1:N6ag73EX4wyxeaoeHctc1mas01KZgsj5tYiAIwqJE/E=
++github.com/adrg/xdg v0.5.0 h1:dDaZvhMXatArP1NPHhnfaQUqWBLBsmx1h1HXQdMoFCY=
++github.com/adrg/xdg v0.5.0/go.mod h1:dDdY4M4DF9Rjy4kHPeNL+ilVF+p2lK8IdM9/rTSGcI4=
+ github.com/andybalholm/brotli v1.0.1/go.mod h1:loMXtMfwqflxFJPmdbJO0a3KNoPuLBgiu3qAvBg8x/Y=
+-github.com/andybalholm/brotli v1.0.6 h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI=
+-github.com/andybalholm/brotli v1.0.6/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
++github.com/andybalholm/brotli v1.1.0 h1:eLKJA0d02Lf0mVpIDgYnqXcUn0GqVmEFny3VuID1U3M=
++github.com/andybalholm/brotli v1.1.0/go.mod h1:sms7XGricyQI9K10gOSf56VKKWS4oLer58Q+mhRPtnY=
+ github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df h1:7RFfzj4SSt6nnvCPbCqijJi1nWCd+TqAT3bYCStRC18=
+ github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df/go.mod h1:pSwJ0fSY5KhvocuWSx4fz3BA8OrA1bQn+K1Eli3BRwM=
+ github.com/awnumar/fastrand v0.0.0-20210315215012-30ee0990fa2d h1:NkqtWyrOjr0QK1FSCmXS6Whbwh100Qt74SaRn92PemU=
+ github.com/awnumar/fastrand v0.0.0-20210315215012-30ee0990fa2d/go.mod h1:TO59kqNCiDBKS0qjRYUI8qJtkFL6SkP2EKqeOQ6xg/o=
+ github.com/awnumar/memcall v0.0.0-20190811121346-2affb857f00a/go.mod h1:sbEXyqNZZ3Cebk+6zOUmFNN8OuHHlugjiUmqn2tfiiM=
+-github.com/awnumar/memcall v0.0.0-20190816154910-db5ea08008a3 h1:pq6ZBJsmKeTOUOgeX3Ed6Td4loLrca4xIq6lstFN7AI=
+ github.com/awnumar/memcall v0.0.0-20190816154910-db5ea08008a3/go.mod h1:CszzLMKGwNr15cNA+0SuWkZLnPXGgUw+9kxRNbwUVnE=
+-github.com/awnumar/memguard v0.19.1 h1:y9k2r1XKaBeLWvB3kyQPNyxD/+qxwDjeZwX+4VZXzUk=
++github.com/awnumar/memcall v0.3.0 h1:8b/3Sptrtgejj2kLgL6M5F2r4OzTf19CTllO+gIXUg8=
++github.com/awnumar/memcall v0.3.0/go.mod h1:8xOx1YbfyuCg3Fy6TO8DK0kZUua3V42/goA5Ru47E8w=
+ github.com/awnumar/memguard v0.19.1/go.mod h1:tewJ+MrJ12cFtR5gH5zNJs8A6BjBv8709binaV+1pws=
+-github.com/bits-and-blooms/bitset v1.8.0 h1:FD+XqgOZDUxxZ8hzoBFuV9+cGWY9CslN6d5MS5JVb4c=
+-github.com/bits-and-blooms/bitset v1.8.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
+-github.com/bits-and-blooms/bloom/v3 v3.5.0 h1:AKDvi1V3xJCmSR6QhcBfHbCN4Vf8FfxeWkMNQfmAGhY=
+-github.com/bits-and-blooms/bloom/v3 v3.5.0/go.mod h1:Y8vrn7nk1tPIlmLtW2ZPV+W7StdVMor6bC1xgpjMZFs=
+-github.com/cilium/ebpf v0.12.3 h1:8ht6F9MquybnY97at+VDZb3eQQr8ev79RueWeVaEcG4=
+-github.com/cilium/ebpf v0.12.3/go.mod h1:TctK1ivibvI3znr66ljgi4hqOT8EYQjz1KWBfb1UVgM=
+-github.com/cloudflare/circl v1.3.7 h1:qlCDlTPz2n9fu58M0Nh1J/JzcFpfgkFHHX3O35r5vcU=
+-github.com/cloudflare/circl v1.3.7/go.mod h1:sRTcRWXGLrKw6yIGJ+l7amYJFfAXbZG0kBSc8r4zxgA=
+-github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
++github.com/awnumar/memguard v0.22.5 h1:PH7sbUVERS5DdXh3+mLo8FDcl1eIeVjJVYMnyuYpvuI=
++github.com/awnumar/memguard v0.22.5/go.mod h1:+APmZGThMBWjnMlKiSM1X7MVpbIVewen2MTkqWkA/zE=
++github.com/bits-and-blooms/bitset v1.10.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
++github.com/bits-and-blooms/bitset v1.13.0 h1:bAQ9OPNFYbGHV6Nez0tmNI0RiEu7/hxlYJRUA0wFAVE=
++github.com/bits-and-blooms/bitset v1.13.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
++github.com/bits-and-blooms/bloom/v3 v3.7.0 h1:VfknkqV4xI+PsaDIsoHueyxVDZrfvMn56jeWUzvzdls=
++github.com/bits-and-blooms/bloom/v3 v3.7.0/go.mod h1:VKlUSvp0lFIYqxJjzdnSsZEw4iHb1kOL2tfHTgyJBHg=
++github.com/cilium/ebpf v0.15.0 h1:7NxJhNiBT3NG8pZJ3c+yfrVdHY8ScgKD27sScgjLMMk=
++github.com/cilium/ebpf v0.15.0/go.mod h1:DHp1WyrLeiBh19Cf/tfiSMhqheEiK8fXFZ4No0P1Hso=
++github.com/cloudflare/circl v1.3.9 h1:QFrlgFYf2Qpi8bSpVPK1HBvWpx16v/1TZivyo7pGuBE=
++github.com/cloudflare/circl v1.3.9/go.mod h1:PDRU+oXvdD7KCtgKxW95M5Z8BpSCJXQORiZFnBQS5QU=
++github.com/cpuguy83/go-md2man/v2 v2.0.4/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
+ github.com/daeuniverse/dae-config-dist/go/dae_config v0.0.0-20230604120805-1c27619b592d h1:hnC39MjR7xt5kZjrKlef7DXKFDkiX8MIcDXYC/6Jf9Q=
+ github.com/daeuniverse/dae-config-dist/go/dae_config v0.0.0-20230604120805-1c27619b592d/go.mod h1:VGWGgv7pCP5WGyHGUyb9+nq/gW0yBm+i/GfCNATOJ1M=
+ github.com/daeuniverse/outbound v0.0.0-20240926154825-3905858d935f h1:m7SMm3/RzJybkgbj5hu4WTuh816HXgiCpeojbMnpqTY=
+@@ -39,8 +42,8 @@ github.com/dgryski/go-metro v0.0.0-20211217172704-adc40b04c140 h1:y7y0Oa6UawqTFP
+ github.com/dgryski/go-metro v0.0.0-20211217172704-adc40b04c140/go.mod h1:c9O8+fpSOX1DM8cPNSkX/qsBWdkD4yd2dpciOWQjpBw=
+ github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152 h1:ED31mPIxDJnrLt9W9dH5xgd/6KjzEACKHBVGQ33czc0=
+ github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152/go.mod h1:I9fhc/EvSg88cDxmfQ47v35Ssz9rlFunL/KY0A1JAYI=
+-github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxKI=
+-github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
++github.com/dlclark/regexp2 v1.11.2 h1:/u628IuisSTwri5/UKloiIsH8+qF2Pu7xEQX+yIKg68=
++github.com/dlclark/regexp2 v1.11.2/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
+ github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 h1:iFaUwBSo5Svw6L7HYpRu/0lE3e0BaElwnNO1qkNQxBY=
+ github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5/go.mod h1:qssHWj60/X5sZFNxpG4HBPDHVqxNm4DfnCKgrbZOT+s=
+ github.com/dsnet/golib v0.0.0-20171103203638-1ea166775780/go.mod h1:Lj+Z9rebOhdfkVLjJ8T6VcRQv3SXugXy999NBtR9aFY=
+@@ -48,19 +51,20 @@ github.com/ebfe/rc2 v0.0.0-20131011165748-24b9757f5521 h1:fBHFH+Y/GPGFGo7LIrErQc
+ github.com/ebfe/rc2 v0.0.0-20131011165748-24b9757f5521/go.mod h1:ucvhdsUCE3TH0LoLRb6ShHiJl8e39dGlx6A4g/ujlow=
+ github.com/eknkc/basex v1.0.1 h1:TcyAkqh4oJXgV3WYyL4KEfCMk9W8oJCpmx1bo+jVgKY=
+ github.com/eknkc/basex v1.0.1/go.mod h1:k/F/exNEHFdbs3ZHuasoP2E7zeWwZblG84Y7Z59vQRo=
+-github.com/frankban/quicktest v1.14.5 h1:dfYrrRyLtiqT9GyKXgdh+k4inNeTvmGbuSgZ3lx3GhA=
+-github.com/frankban/quicktest v1.14.5/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
+ github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
+ github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
+ github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
+ github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
+-github.com/go-logr/logr v1.2.4 h1:g01GSCwiDw2xSZfjJ2/T9M+S6pFdcNtFYsp+Y43HYDQ=
+-github.com/go-logr/logr v1.2.4/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
+-github.com/go-ole/go-ole v1.2.6 h1:/Fpf6oFPoeFik9ty7siob0G6Ke8QvQEuVcuChpwXzpY=
++github.com/go-logr/logr v1.4.1 h1:pKouT5E8xu9zeFC39JXRDukb6JFQPXM5p5I91188VAQ=
++github.com/go-logr/logr v1.4.1/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
+ github.com/go-ole/go-ole v1.2.6/go.mod h1:pprOEPIfldk/42T2oK7lQ4v4JSDwmV0As9GaiUsvbm0=
++github.com/go-ole/go-ole v1.3.0 h1:Dt6ye7+vXGIKZ7Xtk4s6/xVdGDQynvom7xCFEdWr6uE=
++github.com/go-ole/go-ole v1.3.0/go.mod h1:5LS6F96DhAwUc7C+1HLexzMXY1xGRSryjyPPKW6zv78=
++github.com/go-quicktest/qt v1.101.0 h1:O1K29Txy5P2OK0dGo59b7b0LR6wKfIhttaAhHUyn7eI=
++github.com/go-quicktest/qt v1.101.0/go.mod h1:14Bz/f7NwaXPtdYEgzsx46kqSxVwTbzVZsDC26tQJow=
+ github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0/go.mod h1:fyg7847qk6SyHyPtNmDHnmrv/HOrqktSC+C9fM+CJOE=
+-github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 h1:tfuBGBXKqDEevZMzYi5KSi8KkcZtzBcTgAUUtapy0OI=
+-github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572/go.mod h1:9Pwr4B2jHnOSGXyyzV8ROjYa2ojvAY6HCGYYfMoC3Ls=
++github.com/go-task/slim-sprig/v3 v3.0.0 h1:sUs3vkvUymDpBKi3qH1YSqBQk9+9D/8M2mN1vB6EwHI=
++github.com/go-task/slim-sprig/v3 v3.0.0/go.mod h1:W848ghGpv3Qj3dhTPRyJypKRiqCdHZiAzKg9hl15HA8=
+ github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+ github.com/golang/protobuf v1.4.0-rc.1/go.mod h1:ceaxUfeHdC40wWswd/P6IGgMaK3YpKi5j83Wpe3EHw8=
+ github.com/golang/protobuf v1.4.0-rc.1.0.20200221234624-67d41d38c208/go.mod h1:xKAWHe0F5eneWXFV3EuXVDTCmh+JuBKY0li0aMyXATA=
+@@ -68,11 +72,11 @@ github.com/golang/protobuf v1.4.0-rc.2/go.mod h1:LlEzMj4AhA7rCAGe4KMBDvJI+AwstrU
+ github.com/golang/protobuf v1.4.0-rc.4.0.20200313231945-b860323f09d0/go.mod h1:WU3c8KckQ9AFe+yFwt9sWVRKCVIyN9cPHBJSNnbL67w=
+ github.com/golang/protobuf v1.4.0/go.mod h1:jodUvKwWbYaEsadDk5Fwe5c77LiNKVO9IDvqG2KuDX0=
+ github.com/golang/protobuf v1.4.2/go.mod h1:oDoupMAO8OvCJWAcko0GGGIgR6R6ocIYbsSw735rRwI=
+-github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
+-github.com/golang/protobuf v1.5.3 h1:KhyjKVUg7Usr/dYsdSqoFveMYd5ko72D+zANwlG1mmg=
+-github.com/golang/protobuf v1.5.3/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=
+-github.com/golang/snappy v0.0.2 h1:aeE13tS0IiQgFjYdoL8qN3K1N2bXXtI6Vi51/y7BpMw=
++github.com/golang/protobuf v1.5.4 h1:i7eJL8qZTpSEXOPTxNKhASYpMn+8e5Q6AdndVa1dWek=
++github.com/golang/protobuf v1.5.4/go.mod h1:lnTiLA8Wa4RWRcIUkrtSVa5nRhsEGBg48fD6rSs7xps=
+ github.com/golang/snappy v0.0.2/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
++github.com/golang/snappy v0.0.4 h1:yAGX7huGHXlcLOEtBnF4w7FQwA26wojNCwOYAEhLjQM=
++github.com/golang/snappy v0.0.4/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
+ github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
+ github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
+ github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+@@ -81,12 +85,12 @@ github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
+ github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
+ github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+ github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
+-github.com/google/pprof v0.0.0-20230705174524-200ffdc848b8 h1:n6vlPhxsA+BW/XsS5+uqi7GyzaLa5MH7qlSLBZtRdiA=
+-github.com/google/pprof v0.0.0-20230705174524-200ffdc848b8/go.mod h1:Jh3hGz2jkYak8qXPD19ryItVnUgpgeqzdkY/D0EaeuA=
+-github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
+-github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+-github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
+-github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
++github.com/google/pprof v0.0.0-20240711041743-f6c9dda6c6da h1:xRmpO92tb8y+Z85iUOMOicpCfaYcv7o3Cg3wKrIpg8g=
++github.com/google/pprof v0.0.0-20240711041743-f6c9dda6c6da/go.mod h1:K1liHPHnj73Fdn/EKuT8nrFqBihUSKXoLYU0BuatOYo=
++github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
++github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
++github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
++github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
+ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
+ github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+@@ -94,11 +98,12 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
+ github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
+ github.com/klauspost/compress v1.4.1/go.mod h1:RyIbtBH6LamlWaDj8nUwkbUhJ87Yi3uG0guNDohfE1A=
+ github.com/klauspost/compress v1.11.4/go.mod h1:aoV0uJVorq1K+umq18yTdKaF57EivdYsUV+/s2qKfXs=
+-github.com/klauspost/compress v1.17.4 h1:Ej5ixsIri7BrIjBkRZLTo6ghwrEtHFk7ijlczPW4fZ4=
+-github.com/klauspost/compress v1.17.4/go.mod h1:/dCuZOvVtNoHsyb+cuJD3itjs3NbnF6KH9zAO4BDxPM=
++github.com/klauspost/compress v1.17.9 h1:6KIumPrER1LHsvBVuDa0r5xaG0Es51mhhB9BQB2qeMA=
++github.com/klauspost/compress v1.17.9/go.mod h1:Di0epgTjJY877eYKx5yC51cX2A2Vl2ibi7bDH9ttBbw=
+ github.com/klauspost/cpuid v1.2.0/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
+-github.com/klauspost/pgzip v1.2.5 h1:qnWYvvKqedOF2ulHpMG72XQol4ILEJ8k2wwRl/Km8oE=
+ github.com/klauspost/pgzip v1.2.5/go.mod h1:Ch1tH69qFZu15pkjo5kYi6mth2Zzwzt50oCQKQE9RUs=
++github.com/klauspost/pgzip v1.2.6 h1:8RXeL5crjEUFnR2/Sn6GJNWtSQ3Dk8pq4CL3jvdDyjU=
++github.com/klauspost/pgzip v1.2.6/go.mod h1:Ch1tH69qFZu15pkjo5kYi6mth2Zzwzt50oCQKQE9RUs=
+ github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
+ github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
+ github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
+@@ -108,14 +113,14 @@ github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0/go.mod h1:zJYVVT2
+ github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
+ github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovkB8vQcUbaXHg=
+ github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
+-github.com/mattn/go-isatty v0.0.19 h1:JITubQf0MOLdlGRuRq+jtsDlekdYPia9ZFsB8h/APPA=
+-github.com/mattn/go-isatty v0.0.19/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
++github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
++github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
+ github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d h1:5PJl274Y63IEHC+7izoQE9x6ikvDFZS2mDVS3drnohI=
+ github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d/go.mod h1:01TrycV0kFyexm33Z7vhZRXopbI8J3TDReVlkTgMUxE=
+ github.com/mholt/archiver/v3 v3.5.1 h1:rDjOBX9JSF5BvoJGvjqK479aL70qh9DIpZCl+k7Clwo=
+ github.com/mholt/archiver/v3 v3.5.1/go.mod h1:e3dqJ7H78uzsRSEACH1joayhuSyhnonssnDhppzS1L4=
+-github.com/miekg/dns v1.1.58 h1:ca2Hdkz+cDg/7eNF6V56jjzuZ4aCAE+DbVkILdQWG/4=
+-github.com/miekg/dns v1.1.58/go.mod h1:Ypv+3b/KadlvW9vJfXOTf300O4UqaHFzFCuHz+rPkBY=
++github.com/miekg/dns v1.1.61 h1:nLxbwF3XxhwVSm8g9Dghm9MHPaUZuqhPiGL+675ZmEs=
++github.com/miekg/dns v1.1.61/go.mod h1:mnAarhS3nWaW+NVP2wTkYVIZyHNJ098SJZUki3eykwQ=
+ github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
+ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
+ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
+@@ -125,8 +130,9 @@ github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9
+ github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
+ github.com/mzz2017/disk-bloom v1.0.1 h1:rEF9MiXd9qMW3ibRpqcerLXULoTgRlM21yqqJl1B90M=
+ github.com/mzz2017/disk-bloom v1.0.1/go.mod h1:JLHETtUu44Z6iBmsqzkOtFlRvXSlKnxjwiBRDapizDI=
+-github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
+ github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
++github.com/nwaples/rardecode v1.1.3 h1:cWCaZwfM5H7nAD6PyEdcVnczzV8i/JtotnyW/dD9lEc=
++github.com/nwaples/rardecode v1.1.3/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
+ github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
+ github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
+ github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
+@@ -136,41 +142,42 @@ github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+W
+ github.com/onsi/ginkgo v1.12.1/go.mod h1:zj2OWP4+oCPe1qIXoGWkgMRwljMUYCdkwsT2108oapk=
+ github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
+ github.com/onsi/ginkgo v1.16.5/go.mod h1:+E8gABHa3K6zRBolWtd+ROzc/U5bkGt0FwiG042wbpU=
+-github.com/onsi/ginkgo/v2 v2.11.0 h1:WgqUCUt/lT6yXoQ8Wef0fsNn5cAuMK7+KT9UFRz2tcU=
+-github.com/onsi/ginkgo/v2 v2.11.0/go.mod h1:ZhrRA5XmEE3x3rhlzamx/JJvujdZoJ2uvgI7kR0iZvM=
++github.com/onsi/ginkgo/v2 v2.19.0 h1:9Cnnf7UHo57Hy3k6/m5k3dRfGTMXGvxhHFvkDTCTpvA=
++github.com/onsi/ginkgo/v2 v2.19.0/go.mod h1:rlwLi9PilAFJ8jCg9UE1QP6VBpd6/xj3SRC0d6TU0To=
+ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7JYyY=
+ github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
+-github.com/onsi/gomega v1.27.8 h1:gegWiwZjBsf2DgiSbf5hpokZ98JVDMcWkUiigk6/KXc=
+-github.com/onsi/gomega v1.27.8/go.mod h1:2J8vzI/s+2shY9XHRApDkdgPo1TKT7P2u6fXeJKFnNQ=
++github.com/onsi/gomega v1.33.1 h1:dsYjIxxSR755MDmKVsaFQTE22ChNBcuuTWgkUDSubOk=
++github.com/onsi/gomega v1.33.1/go.mod h1:U4R44UsT+9eLIaYRB2a5qajjtQYn0hauxvRm16AVYg0=
+ github.com/panjf2000/ants v1.3.0 h1:8pQ+8leaLc9lys2viEEr8md0U4RN6uOSUCE9bOYjQ9M=
+ github.com/panjf2000/ants v1.3.0/go.mod h1:AaACblRPzq35m1g3enqYcxspbbiOJJYaxU2wMpm1cXY=
+-github.com/pierrec/lz4/v4 v4.1.2 h1:qvY3YFXRQE/XB8MlLzJH7mSzBs74eA2gg52YTk6jUPM=
+ github.com/pierrec/lz4/v4 v4.1.2/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
++github.com/pierrec/lz4/v4 v4.1.21 h1:yOVMLb6qSIDP67pl/5F7RepeKYu/VmTyEXvuMI5d9mQ=
++github.com/pierrec/lz4/v4 v4.1.21/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
+ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+-github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c h1:ncq/mPwQF4JjgDlrVEn3C11VoGHZN7m8qihwgMEtzYw=
+-github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c/go.mod h1:OmDBASR4679mdNQnz2pUhc2G8CO2JrUAVFDRBDP/hJE=
++github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 h1:o4JXh1EVt9k/+g42oCprj/FisM4qX9L3sZB3upGN2ZU=
++github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55/go.mod h1:OmDBASR4679mdNQnz2pUhc2G8CO2JrUAVFDRBDP/hJE=
+ github.com/quic-go/qpack v0.4.0 h1:Cr9BXA1sQS2SmDUWjSofMPNKmvF6IiIfDRmgU0w1ZCo=
+ github.com/quic-go/qpack v0.4.0/go.mod h1:UZVnYIfi5GRk+zI9UMaCPsmZ2xKJP7XBUvVyT1Knj9A=
+-github.com/refraction-networking/utls v1.6.4 h1:aeynTroaYn7y+mFtqv8D0bQ4bw0y9nJHneGxJ7lvRDM=
+-github.com/refraction-networking/utls v1.6.4/go.mod h1:2VL2xfiqgFAZtJKeUTlf+PSYFs3Eu7km0gCtXJ3m8zs=
+-github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
+-github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
++github.com/refraction-networking/utls v1.6.7 h1:zVJ7sP1dJx/WtVuITug3qYUq034cDq9B2MR1K67ULZM=
++github.com/refraction-networking/utls v1.6.7/go.mod h1:BC3O4vQzye5hqpmDTWUqi4P5DDhzJfkV1tdqtawQIH0=
++github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
++github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
+ github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
+-github.com/safchain/ethtool v0.3.0 h1:gimQJpsI6sc1yIqP/y8GYgiXn/NjgvpM0RNoWLVVmP0=
+-github.com/safchain/ethtool v0.3.0/go.mod h1:SA9BwrgyAqNo7M+uaL6IYbxpm5wk3L7Mm6ocLW+CJUs=
+-github.com/seiflotfy/cuckoofilter v0.0.0-20220411075957-e3b120b3f5fb h1:XfLJSPIOUX+osiMraVgIrMR27uMXnRJWGm1+GL8/63U=
+-github.com/seiflotfy/cuckoofilter v0.0.0-20220411075957-e3b120b3f5fb/go.mod h1:bR6DqgcAl1zTcOX8/pE2Qkj9XO00eCNqmKb7lXP8EAg=
+-github.com/shirou/gopsutil/v4 v4.24.5 h1:gGsArG5K6vmsh5hcFOHaPm87UD003CaDMkAOweSQjhM=
+-github.com/shirou/gopsutil/v4 v4.24.5/go.mod h1:aoebb2vxetJ/yIDZISmduFvVNPHqXQ9SEJwRXxkf0RA=
++github.com/safchain/ethtool v0.4.1 h1:S6mEleTADqgynileXoiapt/nKnatyR6bmIHoF+h2ADo=
++github.com/safchain/ethtool v0.4.1/go.mod h1:XLLnZmy4OCRTkksP/UiMjij96YmIsBfmBQcs7H6tA48=
++github.com/seiflotfy/cuckoofilter v0.0.0-20240715131351-a2f2c23f1771 h1:emzAzMZ1L9iaKCTxdy3Em8Wv4ChIAGnfiz18Cda70g4=
++github.com/seiflotfy/cuckoofilter v0.0.0-20240715131351-a2f2c23f1771/go.mod h1:bR6DqgcAl1zTcOX8/pE2Qkj9XO00eCNqmKb7lXP8EAg=
++github.com/shirou/gopsutil/v4 v4.24.6 h1:9qqCSYF2pgOU+t+NgJtp7Co5+5mHF/HyKBUckySQL64=
++github.com/shirou/gopsutil/v4 v4.24.6/go.mod h1:aoebb2vxetJ/yIDZISmduFvVNPHqXQ9SEJwRXxkf0RA=
+ github.com/shoenig/go-m1cpu v0.1.6 h1:nxdKQNcEB6vzgA2E2bvzKIYRuNj7XNJ4S/aRSwKzFtM=
+ github.com/shoenig/go-m1cpu v0.1.6/go.mod h1:1JJMcUBvfNwpq05QDQVAnx3gUHr9IYF7GNg9SUEw2VQ=
+ github.com/shoenig/test v0.6.4 h1:kVTaSd7WLz5WZ2IaoM0RSzRsUD+m8wRR+5qvntpn4LU=
+ github.com/shoenig/test v0.6.4/go.mod h1:byHiCGXqrVaflBLAMq/srcZIHynQPQgeyvkvXnjqq0k=
+ github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
+ github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
+-github.com/spf13/cobra v1.7.0 h1:hyqWnYt1ZQShIddO5kBpj3vu05/++x6tJ6dg8EC572I=
+-github.com/spf13/cobra v1.7.0/go.mod h1:uLxZILRyS/50WlhOIKD7W6V5bgeIt+4sICxh6uRMrb0=
++github.com/spf13/cobra v1.8.1 h1:e5/vxKd/rZsfSJMUX1agtjeTDf+qv1/JdBF8gg5k9ZM=
++github.com/spf13/cobra v1.8.1/go.mod h1:wHxEcudfqmLYa8iTfL+OuZPbBZkmvliBWKIezN3kD9Y=
+ github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
+ github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
+ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+@@ -188,8 +195,9 @@ github.com/tklauser/numcpus v0.6.1/go.mod h1:1XfjsgE2zo8GVw7POkMbHENHzVg3GzmoZ9f
+ github.com/twmb/murmur3 v1.1.6 h1:mqrRot1BRxm+Yct+vavLMou2/iJt0tNVTTC0QoIjaZg=
+ github.com/twmb/murmur3 v1.1.6/go.mod h1:Qq/R7NUyOfr65zD+6Q5IHKsJLwP7exErjN6lyyq3OSQ=
+ github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
+-github.com/ulikunitz/xz v0.5.9 h1:RsKRIA2MO8x56wkkcd3LbtcE/uMszhb6DpRf+3uwa3I=
+ github.com/ulikunitz/xz v0.5.9/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
++github.com/ulikunitz/xz v0.5.12 h1:37Nm15o69RwBkXM0J6A5OlE67RZTfzUxTj8fB3dfcsc=
++github.com/ulikunitz/xz v0.5.12/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
+ github.com/v2rayA/ahocorasick-domain v0.0.0-20231231085011-99ceb8ef3208 h1:s/K1ome/+rTDictkqGhqLuAleUymyWnvgNWARjblS9U=
+ github.com/v2rayA/ahocorasick-domain v0.0.0-20231231085011-99ceb8ef3208/go.mod h1:mWch8I826zic/bKaCyE9ZZbWtFgEW0ox3EQ0NGm5DGw=
+ github.com/vishvananda/netlink v1.1.0 h1:1iyaYNBLmP6L0220aDnYQpo1QEV4t4hJ+xEEhhJH8j0=
+@@ -212,25 +220,25 @@ golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACk
+ golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
+ golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
+ golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
+-golang.org/x/crypto v0.21.0 h1:X31++rzVUdKhX5sWmSOFZxx8UW/ldWx55cbf08iNAMA=
+-golang.org/x/crypto v0.21.0/go.mod h1:0BP7YvVV9gBbVKyeTG0Gyn+gZm94bibOW5BjDEYAOMs=
+-golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 h1:LfspQV/FYTatPTr/3HzIcmiUFH7PGP+OQ6mgDYo3yuQ=
+-golang.org/x/exp v0.0.0-20240222234643-814bf88cf225/go.mod h1:CxmFvTBINI24O/j8iY7H1xHzx2i4OsyguNBmN/uPtqc=
++golang.org/x/crypto v0.25.0 h1:ypSNr+bnYL2YhwoMt2zPxHFmbAN1KZs/njMG3hxUp30=
++golang.org/x/crypto v0.25.0/go.mod h1:T+wALwcMOSE0kXgUAnPAHqTLW+XHgcELELW8VaDgm/M=
++golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7 h1:wDLEX9a7YQoKdKNQt88rtydkqDxeGaBUTnIYc3iG/mA=
++golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7/go.mod h1:M4RDyNAINzryxdtnbRXRL/OHtkFuWGRjvuhBJpk2IlY=
+ golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
+-golang.org/x/mod v0.15.0 h1:SernR4v+D55NyBH2QiEQrlBAnj1ECL6AGrA5+dPaMY8=
+-golang.org/x/mod v0.15.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
++golang.org/x/mod v0.19.0 h1:fEdghXQSo20giMthA7cd28ZC+jts4amQ3YMXiP5oMQ8=
++golang.org/x/mod v0.19.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
+ golang.org/x/net v0.0.0-20180906233101-161cd47e91fd/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
+ golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
+ golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
+ golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7/go.mod h1:qpuaurCH72eLCgpAm/N6yyVIVM9cpaDIP3A8BGJEC5A=
+ golang.org/x/net v0.0.0-20201021035429-f5854403a974/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
+-golang.org/x/net v0.22.0 h1:9sGLhx7iRIHEiX0oAJ3MRZMUCElJgy7Br1nO+AMN3Tc=
+-golang.org/x/net v0.22.0/go.mod h1:JKghWKKOSdJwpW2GEx0Ja7fmaKnMsbu+MWVZTokSYmg=
++golang.org/x/net v0.27.0 h1:5K3Njcw06/l2y9vpGCSdcxWOYHOUk3dVNGDXN+FvAys=
++golang.org/x/net v0.27.0/go.mod h1:dDi0PyhWNoiUOrAS8uXv/vnScO4wnHQO4mj9fn/RytE=
+ golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+ golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+ golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+-golang.org/x/sync v0.6.0 h1:5BMeUDZ7vkXGfEr1x9B4bRcTH4lpkTkpdh0T/J+qjbQ=
+-golang.org/x/sync v0.6.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
++golang.org/x/sync v0.7.0 h1:YsImfSBoP9QPYL0xyKJPq0gcaJdG3rInoqxTWbfQu9M=
++golang.org/x/sync v0.7.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
+ golang.org/x/sys v0.0.0-20180909124046-d0be0721c37e/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+ golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+ golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+@@ -246,45 +254,44 @@ golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd/go.mod h1:h1NjWce9XRLGQEsW7w
+ golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+ golang.org/x/sys v0.0.0-20201204225414-ed752295db88/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+ golang.org/x/sys v0.0.0-20210112080510-489259a85091/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+-golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+ golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+ golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
++golang.org/x/sys v0.1.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+ golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+ golang.org/x/sys v0.8.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+ golang.org/x/sys v0.11.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+-golang.org/x/sys v0.20.0 h1:Od9JTbYCk261bKm4M/mw7AklTlFYIa0bIp9BgSm1S8Y=
+-golang.org/x/sys v0.20.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
+-golang.org/x/term v0.18.0 h1:FcHjZXDMxI8mM3nwhX9HlKop4C0YQvCVCdwYl2wOtE8=
+-golang.org/x/term v0.18.0/go.mod h1:ILwASektA3OnRv7amZ1xhE/KTR+u50pbXfZ03+6Nx58=
++golang.org/x/sys v0.21.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
++golang.org/x/sys v0.22.0 h1:RI27ohtqKCnwULzJLqkv897zojh5/DwS/ENaMzUOaWI=
++golang.org/x/sys v0.22.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
++golang.org/x/term v0.22.0 h1:BbsgPEJULsl2fV/AT3v15Mjva5yXKQDyKf+TbDz7QJk=
++golang.org/x/term v0.22.0/go.mod h1:F3qCibpT5AMpCRfhfT53vVJwhLtIVHhB9XDjfFvnMI4=
+ golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
+ golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
+-golang.org/x/text v0.14.0 h1:ScX5w1eTa3QqT8oi6+ziP7dTV1S2+ALU0bI+0zXKWiQ=
+-golang.org/x/text v0.14.0/go.mod h1:18ZOQIKpY8NJVqYksKHtTdi31H5itFRjB5/qKTNYzSU=
++golang.org/x/text v0.16.0 h1:a94ExnEXNtEwYLGJSIUxnWoxoRz/ZcCsV63ROupILh4=
++golang.org/x/text v0.16.0/go.mod h1:GhwF1Be+LQoKShO3cGOHzqOgRrGaYc9AvblQOmPVHnI=
+ golang.org/x/time v0.5.0 h1:o7cqy6amK/52YcAKIPlM3a+Fpj35zvRj2TP+e1xFSfk=
+ golang.org/x/time v0.5.0/go.mod h1:3BpzKBy/shNhVucY/MWOyx10tF3SFh9QdLuxbVysPQM=
+ golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+ golang.org/x/tools v0.0.0-20191119224855-298f0cb1881e/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
+ golang.org/x/tools v0.0.0-20201224043029-2b0845dc783e/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
+-golang.org/x/tools v0.18.0 h1:k8NLag8AGHnn+PHbl7g43CtqZAwG60vZkLqgyZgIHgQ=
+-golang.org/x/tools v0.18.0/go.mod h1:GL7B4CwcLLeo59yx/9UWWuNOW1n3VZ4f5axWfML7Lcg=
++golang.org/x/tools v0.23.0 h1:SGsXPZ+2l4JsgaCKkx+FQ9YZ5XEtA1GZYuoDjenLjvg=
++golang.org/x/tools v0.23.0/go.mod h1:pnu6ufv6vQkll6szChhK3C3L/ruaIv5eBeztNG8wtsI=
+ golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+ golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+ golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+ golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+-google.golang.org/genproto/googleapis/rpc v0.0.0-20230807174057-1744710a1577 h1:wukfNtZmZUurLN/atp2hiIeTKn7QJWIQdHzqmsOnAOk=
+-google.golang.org/genproto/googleapis/rpc v0.0.0-20230807174057-1744710a1577/go.mod h1:+Bk1OCOj40wS2hwAMA+aCW9ypzm63QTBBHp6lQ3p+9M=
+-google.golang.org/grpc v1.57.0 h1:kfzNeI/klCGD2YPMUlaGNT3pxvYfga7smW3Vth8Zsiw=
+-google.golang.org/grpc v1.57.0/go.mod h1:Sd+9RMTACXwmub0zcNY2c4arhtrbBYD1AUHI/dt16Mo=
++google.golang.org/genproto/googleapis/rpc v0.0.0-20240711142825-46eb208f015d h1:JU0iKnSg02Gmb5ZdV8nYsKEKsP6o/FGVWTrw4i1DA9A=
++google.golang.org/genproto/googleapis/rpc v0.0.0-20240711142825-46eb208f015d/go.mod h1:Ue6ibwXGpU+dqIcODieyLOcgj7z8+IcskoNIgZxtrFY=
++google.golang.org/grpc v1.65.0 h1:bs/cUb4lp1G5iImFFd3u5ixQzweKizoZJAwBNLR42lc=
++google.golang.org/grpc v1.65.0/go.mod h1:WgYC2ypjlB0EiQi6wdKixMqukr6lBc0Vo+oOgjrM5ZQ=
+ google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
+ google.golang.org/protobuf v0.0.0-20200221191635-4d8936d0db64/go.mod h1:kwYJMbMJ01Woi6D6+Kah6886xMZcty6N08ah7+eCXa0=
+ google.golang.org/protobuf v0.0.0-20200228230310-ab0ca4ff8a60/go.mod h1:cfTl7dwQJ+fmap5saPgwCLgHXTUD7jkjRqWcaiX5VyM=
+ google.golang.org/protobuf v1.20.1-0.20200309200217-e05f789c0967/go.mod h1:A+miEFZTKqfCUM6K7xSMQL9OKL/b6hQv+e19PK+JZNE=
+ google.golang.org/protobuf v1.21.0/go.mod h1:47Nbq4nVaFHyn7ilMalzfO3qCViNmqZ2kzikPIcrTAo=
+ google.golang.org/protobuf v1.23.0/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2l/sGQquU=
+-google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
+-google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
+-google.golang.org/protobuf v1.33.0 h1:uNO2rsAINq/JlFpSdYEKIZ0uKD/R9cpdv0T+yoGwGmI=
+-google.golang.org/protobuf v1.33.0/go.mod h1:c6P6GXX6sHbq/GpV6MGZEdwhWPcYBgnhAHhKbcUYpos=
++google.golang.org/protobuf v1.34.2 h1:6xV6lTsCfpGD21XK49h7MhtcApnLqkfYgPcdHftf6hg=
++google.golang.org/protobuf v1.34.2/go.mod h1:qYOHts0dSfpeUzUFpOMr/WGzszTmLH+DiWniOlNbLDw=
+ gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 h1:qIbj1fsPNlZgppZ+VLlY7N33q108Sa+fhmuc+sWQYwY=
+ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+diff --git a/hack/mock/insert.sh b/hack/mock/insert.sh
+index fa809d2..985e4b8 100755
+--- a/hack/mock/insert.sh
++++ b/hack/mock/insert.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ lan=docker0
+-wan=ens192
++wan=enp5s0
+ 
+ sudo tc qdisc add dev $lan clsact > /dev/null 2>&1
+ sudo tc qdisc add dev $wan clsact > /dev/null 2>&1
+@@ -10,7 +10,7 @@ set -ex
+ sudo rm -rf /sys/fs/bpf/tc/globals/*
+ 
+ # clang -fno-stack-protector -O2 -g -emit-llvm -c ../../control/kern/tproxy.c -o - | llc -march=bpf -mcpu=v3 -mattr=+alu32 -filetype=obj -o foo.o
+-clang-14 -O2 -g -Wall -c ../../control/kern/tproxy.c -target bpf -D__TARGET_ARCH_x86 -o foo.o
++clang -O2 -g -Wall -c ../../control/kern/tproxy.c -target bpf -D__TARGET_ARCH_x86 -o foo.o
+ sudo tc filter del dev $lan ingress
+ sudo tc filter del dev $lan egress
+ sudo tc filter del dev $wan ingress
+-- 
+2.39.3 (Apple Git-145)
+
