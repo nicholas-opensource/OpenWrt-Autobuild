@@ -104,8 +104,6 @@ cp -rf ../immortalwrt_luci/applications/luci-app-autoreboot ./feeds/luci/applica
 ln -sf ../../../feeds/luci/applications/luci-app-autoreboot ./package/feeds/luci/luci-app-autoreboot
 # Dae ready
 cp -rf ../immortalwrt_pkg/net/dae ./feeds/packages/net/dae
-mkdir -p feeds/packages/net/dae/patches
-cp -rf ../PATCH/duplicate/dae/* ./feeds/packages/net/dae/patches/
 ln -sf ../../../feeds/packages/net/dae ./package/feeds/packages/dae
 wget -qO - https://github.com/immortalwrt/immortalwrt/commit/73e5679.patch | patch -p1
 wget https://github.com/immortalwrt/immortalwrt/raw/openwrt-23.05/target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch -O target/linux/generic/backport-5.15/051-v5.18-bpf-Add-config-to-allow-loading-modules-with-BTF-mismatch.patch
@@ -125,7 +123,7 @@ rm -rf ./feeds/packages/lang/golang
 cp -rf ../openwrt_pkg_ma/lang/golang ./feeds/packages/lang/golang
 # NIC drivers update
 cp -rf ../immortalwrt/package/kernel/r8152 ./package/new/r8152
-git clone https://github.com/sbwml/package_kernel_r8152 package/new/r8152
+git clone https://github.com/sbwml/package_kernel_r8125 package/new/r8125
 git clone -b master --depth 1 https://github.com/BROBIRD/openwrt-r8168.git package/new/r8168
 patch -p1 <../PATCH/r8168/r8168-fix_LAN_led-for_r4s-from_TL.patch
 cp -rf ../lede/target/linux/x86/patches-5.15/996-intel-igc-i225-i226-disable-eee.patch ./target/linux/x86/patches-5.15/996-intel-igc-i225-i226-disable-eee.patch
